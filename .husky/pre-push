@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+
+# Swaps the interpreter when husky started this hook under `sh`; must run
+# before anything bash-4-only is parsed.
+. "$(dirname "$0")/lib/require-bash.sh"
+# shellcheck source=lib/hook-env.sh
+. "$(dirname "$0")/lib/hook-env.sh"
+
+# `-E` so the ERR trap from the shared step runner is inherited by functions.
+set -Eeuo pipefail
+
+HOOK_NAME="PRE-PUSH"
+# shellcheck source=lib/step-runner.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/step-runner.sh"
+trap on_hook_failure ERR
+
+ZERO_SHA="0000000000000000000000000000000000000000"
+PUSHED_FILES=()
+
+# Read the refs once: the hook re-runs itself under the heavy lock and needs them again.
+REFS="$(cat)"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  local_ref="${local_ref%$'\r'}"
+  local_sha="${local_sha%$'\r'}"
+  remote_ref="${remote_ref%$'\r'}"
+  remote_sha="${remote_sha%$'\r'}"
+
+  if [[ -z "${local_ref:-}" || "$local_sha" == "$ZERO_SHA" ]]; then
+    continue
+  fi
+
+  if [[ "$remote_sha" == "$ZERO_SHA" ]]; then
+    # New branch: compare against the empty tree. Conservative: it only skips
+    # when the branch history effectively contains markdown alone.
+    range="$(git hash-object -t tree /dev/null)..$local_sha"
+  else
+    range="$remote_sha..$local_sha"
+  fi
+
+  mapfile -t ref_files < <(git diff --name-only --diff-filter=ACMRD "$range" --)
+  PUSHED_FILES+=("${ref_files[@]}")
+done <<<"$REFS"
+
+if ((${#PUSHED_FILES[@]} == 0)); then
+  exit 0
+fi
+
+MARKDOWN_ONLY=true
+for file in "${PUSHED_FILES[@]}"; do
+  case "$file" in
+    *.md) ;;
+    *)
+      MARKDOWN_ONLY=false
+      break
+      ;;
+  esac
+done
+
+if [[ "$MARKDOWN_ONLY" == true ]]; then
+  echo "markdown-only push: skip code checks"
+  exit 0
+fi
+
+# shellcheck source=lib/heavy-lock.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/heavy-lock.sh"
+heavy_lock_hook athena-page pre-push "$0" "$@" <<<"$REFS"
+
+# Cheapest gate that can still fail goes first. Prettier runs in CHECK mode: a
+# push has nothing to re-stage into, so rewriting files would push one thing
+# and leave another on disk.
+run_step "prettier (whole repo, check only)" pnpm format:check
+run_step "typecheck (astro check)" pnpm check
+run_step "eslint (whole repo, --max-warnings 0)" pnpm lint
+run_step "node test (unit)" pnpm test
+run_step "build" pnpm build

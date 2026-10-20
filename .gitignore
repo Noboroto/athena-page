@@ -1,1 +1,9 @@
 /plans
+node_modules
+dist
+.astro
+.env*
+!.env.example
+src/.quarantine.json
+.DS_Store
+quarantine.md

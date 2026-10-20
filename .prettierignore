@@ -1,0 +1,10 @@
+node_modules
+dist
+.astro
+pnpm-lock.yaml
+.husky/_
+public
+plans
+.serena
+.code-review-graph
+.claude

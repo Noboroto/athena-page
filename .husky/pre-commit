@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+
+# Swaps the interpreter when husky started this hook under `sh`; must run
+# before anything bash-4-only is parsed.
+. "$(dirname "$0")/lib/require-bash.sh"
+# shellcheck source=lib/hook-env.sh
+. "$(dirname "$0")/lib/hook-env.sh"
+
+# `-E` so the ERR trap below is inherited by functions and subshells.
+set -Eeuo pipefail
+
+HOOK_NAME="PRE-COMMIT"
+# shellcheck source=lib/step-runner.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/step-runner.sh"
+trap on_hook_failure ERR
+
+mapfile -d '' STAGED_FILES < <(
+  git diff --cached --name-only --diff-filter=ACMRD -z
+)
+
+STAGED_COUNT=$(
+  git diff --cached --name-only -z |
+    tr -cd '\0' |
+    wc -c |
+    tr -d ' '
+)
+
+if ((STAGED_COUNT > 50)); then
+  echo "ERROR: $STAGED_COUNT staged files exceeds the 50-file limit. Split the commit."
+  echo "Split into the FEWEST commits that fit: ceil(total/50), not one per concern."
+  echo "Every extra commit is another full hook run, so aim for the floor."
+  exit 1
+fi
+
+if ((${#STAGED_FILES[@]} == 0)); then
+  exit 0
+fi
+
+# A file may sit above LINE_LIMIT, but a commit may not make it longer: the
+# count is compared against HEAD, so the debt can only shrink.
+LINE_LIMIT=1000
+OVERSIZE_GREW=()
+OVERSIZE_HELD=()
+while IFS= read -r file; do
+  case "$file" in
+    *.ts | *.tsx | *.js | *.jsx | *.mjs | *.cjs | *.css | *.scss | *.astro) ;;
+    *) continue ;;
+  esac
+  case "$file" in
+    */generated/* | *.min.*) continue ;;
+  esac
+  staged_lines=$({ git show ":$file" 2>/dev/null || true; } | wc -l | tr -d ' ')
+  ((staged_lines > LINE_LIMIT)) || continue
+  # `|| true` inside the group: a new file has no HEAD blob, the pipeline fails
+  # under pipefail, and `set -e` would abort the hook instead of counting 0.
+  head_lines=$({ git show "HEAD:$file" 2>/dev/null || true; } | wc -l | tr -d ' ')
+  head_lines=${head_lines:-0}
+  if ((staged_lines > head_lines)); then
+    OVERSIZE_GREW+=("$file ($head_lines -> $staged_lines)")
+  else
+    OVERSIZE_HELD+=("$file ($staged_lines)")
+  fi
+done < <(git diff --cached --name-only --diff-filter=d)
+
+if ((${#OVERSIZE_HELD[@]} > 0)); then
+  echo "NOTE: already over $LINE_LIMIT lines, not grown by this commit:"
+  printf '  %s\n' "${OVERSIZE_HELD[@]}"
+fi
+
+if ((${#OVERSIZE_GREW[@]} > 0)); then
+  echo "ERROR: these files pass $LINE_LIMIT lines and this commit makes them longer:"
+  printf '  %s\n' "${OVERSIZE_GREW[@]}"
+  echo "Split them - extract a module, or move a describe block to its own file."
+  exit 1
+fi
+
+MARKDOWN_ONLY=true
+for file in "${STAGED_FILES[@]}"; do
+  case "$file" in
+    *.md) ;;
+    *)
+      MARKDOWN_ONLY=false
+      break
+      ;;
+  esac
+done
+
+if [[ "$MARKDOWN_ONLY" == true ]]; then
+  echo "markdown-only commit: skip code checks"
+  exit 0
+fi
+
+# Cheap checks above need no lock. Everything below runs the heavy steps, so it
+# waits for the machine-wide heavy lock; the re-run under the lock repeats the
+# cheap checks above.
+# shellcheck source=lib/heavy-lock.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/heavy-lock.sh"
+heavy_lock_hook athena-page pre-commit "$0" "$@"
+
+FORMATTABLE_FILES=()
+for file in "${STAGED_FILES[@]}"; do
+  case "$file" in
+    *.ts | *.mjs | *.cjs | *.js | *.astro | *.json | *.css | *.yml | *.yaml)
+      # Only files that still exist: a commit that DELETES a file still lists it
+      # here, but prettier cannot format a missing path and the re-stage below
+      # would abort the hook.
+      if [[ -e "$file" ]]; then
+        FORMATTABLE_FILES+=("$file")
+      fi
+      ;;
+  esac
+done
+
+# Split the staged set BEFORE prettier runs. `git add <file>` stages the whole
+# file, so for a file staged only in PART it would silently sweep the unstaged
+# work-in-progress into the commit. This has to be measured before `format:fix`,
+# because prettier rewriting a file creates unstaged changes of its own.
+PARTIALLY_STAGED=()
+FULLY_STAGED=()
+for file in "${FORMATTABLE_FILES[@]}"; do
+  if git diff --quiet -- "$file"; then
+    FULLY_STAGED+=("$file")
+  else
+    PARTIALLY_STAGED+=("$file")
+  fi
+done
+
+run_step "prettier (whole repo)" pnpm format:fix
+
+if ((${#FULLY_STAGED[@]} > 0)); then
+  git add -- "${FULLY_STAGED[@]}"
+fi
+
+if ((${#PARTIALLY_STAGED[@]} > 0)); then
+  echo "WARNING: only PART of these files is staged, so the hook did not 'git add' them"
+  echo "(that would sweep in the part you left out). Prettier did format them on disk;"
+  echo "stage the hunks you want yourself if needed:"
+  printf '  %s\n' "${PARTIALLY_STAGED[@]}"
+fi
+
+run_step "typecheck (astro check)" pnpm check
+run_step "eslint (whole repo, --max-warnings 0)" pnpm lint
+run_step "node test (unit)" pnpm test

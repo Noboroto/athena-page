@@ -1,0 +1,46 @@
+{
+  "name": "athena-page",
+  "private": true,
+  "type": "module",
+  "version": "0.0.1",
+  "packageManager": "pnpm@12.3.4",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "prepare": "husky && node scripts/fix-hook-perms.mjs",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "prebuild": "node scripts/check-content.mjs",
+    "check": "astro check",
+    "lint": "eslint . --max-warnings 0",
+    "format:fix": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node --test \"scripts/**/*.test.mjs\" \".github/scripts/**/*.test.mjs\""
+  },
+  "dependencies": {
+    "@astrojs/markdown-remark": "^7.3.3",
+    "@astrojs/rss": "^4.0.19",
+    "@astrojs/sitemap": "^3.7.4",
+    "astro": "^7.4.0",
+    "astro-pagefind": "^2.0.1",
+    "katex": "^0.19.0",
+    "pagefind": "^1.5.2",
+    "rehype-katex": "^7.0.1",
+    "rehype-sanitize": "^6.0.0",
+    "remark-math": "^6.0.0",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",
+    "eslint": "^10.13.0",
+    "eslint-plugin-astro": "^3.2.1",
+    "husky": "9.1.7",
+    "prettier": "^3.9.10",
+    "prettier-plugin-astro": "^1.1.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2"
+  }
+}
