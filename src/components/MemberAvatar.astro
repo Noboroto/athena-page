@@ -7,21 +7,42 @@ interface Props {
   size?: number;
 }
 
-const { name, avatar, size = 72 } = Astro.props;
-
-const words = name.trim().split(/\s+/).filter(Boolean);
-const letters = [words[0], words.length > 1 ? words.at(-1) : undefined]
-  .filter((w): w is string => Boolean(w))
-  .map((w) => Array.from(w)[0]?.toLocaleUpperCase())
-  .join('');
-// Stable colour per name so the same person always gets the same tint.
-const hue = (Array.from(name).reduce((h, c) => (h * 31 + c.codePointAt(0)!) | 0, 7) >>> 0) % 6;
+const { avatar, size = 72 } = Astro.props;
+const fallback = withBase('/images/members/default-avatar.svg');
 ---
 
-<span class={`avatar avatar--${hue + 1}`} style={`--size:${size / 16}rem`} aria-hidden="true">
-  {avatar ? (
-    <img src={withBase(avatar)} alt="" width={size} height={size} loading="lazy" decoding="async" />
-  ) : (
-    letters
+<!-- The default avatar is the wrapper background: visible while the photo loads and after a load error. -->
+<span
+  class="avatar"
+  style={`--size:${size / 16}rem;background-image:url(${fallback})`}
+  aria-hidden="true"
+>
+  {avatar && (
+    <img
+      src={withBase(avatar)}
+      alt=""
+      width={size}
+      height={size}
+      loading="lazy"
+      decoding="async"
+      data-avatar-img
+    />
   )}
 </span>
+
+<script>
+  // Hide a photo that failed to load so the default background shows through.
+  // `error` does not bubble, so listen in the capture phase; also catch failures that fired before this ran.
+  const hide = (img: HTMLImageElement) => (img.hidden = true);
+  document.addEventListener(
+    'error',
+    (e) => {
+      const t = e.target;
+      if (t instanceof HTMLImageElement && t.hasAttribute('data-avatar-img')) hide(t);
+    },
+    true,
+  );
+  document
+    .querySelectorAll<HTMLImageElement>('img[data-avatar-img]')
+    .forEach((img) => img.complete && img.naturalWidth === 0 && hide(img));
+</script>

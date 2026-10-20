@@ -130,7 +130,7 @@ describe('from-template', () => {
         plan(
           payload(
             'from-template',
-            entryCtx('news-vi', 'src/content/news/vi/vi-du-tin-seminar.md'),
+            entryCtx('news-vi', 'src/content/news/vi/2026-10-05-seminar-toi-uu-khong-loi.md'),
             input,
           ),
         ),
@@ -160,7 +160,7 @@ describe('from-template', () => {
 describe('duplicate', () => {
   it('copies a member under a new name', () => {
     const result = plan(
-      payload('duplicate', entryCtx('members', 'src/content/members/vi-du-nghien-cuu-sinh.md'), {
+      payload('duplicate', entryCtx('members', 'src/content/members/pham-quoc-anh.md'), {
         title: 'Trần Thị B',
       }),
     );
@@ -171,7 +171,7 @@ describe('duplicate', () => {
     assert.equal(fields.draft, true);
     assert.equal(fields.role, 'phd', 'other fields are kept');
     const again = plan(
-      payload('duplicate', entryCtx('members', 'src/content/members/vi-du-nghien-cuu-sinh.md'), {
+      payload('duplicate', entryCtx('members', 'src/content/members/pham-quoc-anh.md'), {
         title: 'Trần Thị B',
       }),
     );
@@ -182,14 +182,17 @@ describe('duplicate', () => {
     const run = (name, file) => () =>
       plan(payload('duplicate', entryCtx(name, file), { title: 'X' }));
     assert.throws(
-      run('news-en', 'src/content/news/en/vi-du-tin-seminar.md'),
+      run('news-en', 'src/content/news/en/2026-10-05-seminar-toi-uu-khong-loi.md'),
       /không hỗ trợ nhân bản/,
     );
-    assert.throws(run('members', 'src/content/papers/vi-du-paper-hoi-nghi.md'), /ngoài vùng/);
+    assert.throws(
+      run('members', 'src/content/papers/convergence-local-sgd-heterogeneous-data.md'),
+      /ngoài vùng/,
+    );
     assert.throws(run('members', '../package.json'), /không hợp lệ/);
     assert.throws(run('members', 'src/content/members/sub/a.md'), /Không phải file bài/);
     assert.throws(run('members', 'src/content/members/missing.md'), /Không tìm thấy/);
-    assert.throws(run('members', 'src/content/members/vi-du-giang-vien.txt'), /đuôi/);
+    assert.throws(run('members', 'src/content/members/tran-minh-khoa.txt'), /đuôi/);
     assert.throws(
       () =>
         plan(payload('duplicate', collectionCtx('members', 'src/content/members'), { title: 'X' })),
@@ -220,7 +223,10 @@ describe('translate-en', () => {
     assert.throws(
       () =>
         plan(
-          payload('translate-en', entryCtx('news-vi', 'src/content/news/vi/vi-du-tin-seminar.md')),
+          payload(
+            'translate-en',
+            entryCtx('news-vi', 'src/content/news/vi/2026-10-05-seminar-toi-uu-khong-loi.md'),
+          ),
         ),
       /đã có/,
     );
@@ -228,16 +234,16 @@ describe('translate-en', () => {
 
   it('is only offered for news-vi and projects-vi', () => {
     for (const [name, file] of [
-      ['members', 'src/content/members/vi-du-giang-vien.md'],
-      ['papers', 'src/content/papers/vi-du-paper-hoi-nghi.md'],
-      ['news-en', 'src/content/news/en/vi-du-tin-seminar.md'],
+      ['members', 'src/content/members/tran-minh-khoa.md'],
+      ['papers', 'src/content/papers/convergence-local-sgd-heterogeneous-data.md'],
+      ['news-en', 'src/content/news/en/2026-10-05-seminar-toi-uu-khong-loi.md'],
     ]) {
       assert.throws(
         () => plan(payload('translate-en', entryCtx(name, file))),
         /không có bản tiếng Anh/,
       );
     }
-    assert.ok(!existsSync(path.join(root, 'src/content/members/vi-du-giang-vien-en.md')));
+    assert.ok(!existsSync(path.join(root, 'src/content/members/tran-minh-khoa-en.md')));
   });
 
   it('rejects an unknown action', () => {

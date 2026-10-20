@@ -405,34 +405,18 @@ main {
   height: var(--size, 4.5rem);
   border-radius: 50%;
   overflow: hidden;
-  font-weight: 700;
-  font-size: calc(var(--size, 4.5rem) * 0.36);
-  background: var(--avatar-1);
-  color: var(--on-avatar);
+  background-color: var(--accent-soft);
+  background-size: cover;
+  background-position: center;
   user-select: none;
+}
+.avatar img[hidden] {
+  display: none;
 }
 .avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-.avatar--1 {
-  background: var(--avatar-1);
-}
-.avatar--2 {
-  background: var(--avatar-2);
-}
-.avatar--3 {
-  background: var(--avatar-3);
-}
-.avatar--4 {
-  background: var(--avatar-4);
-}
-.avatar--5 {
-  background: var(--avatar-5);
-}
-.avatar--6 {
-  background: var(--avatar-6);
 }
 
 /* ---------- members ---------- */
