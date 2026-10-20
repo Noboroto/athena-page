@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProjectCard from '../../../components/ProjectCard.astro';
+import { localeStaticPaths } from '../../../lib/i18n-routes';
+import { localizedItems } from '../../../lib/localized';
+import { label } from '../../../lib/labels';
+import { localeFromParam, t } from '../../../i18n';
+
+export function getStaticPaths() {
+  return localeStaticPaths();
+}
+
+const locale = localeFromParam(Astro.params.locale);
+const items = await localizedItems('projects', locale);
+const groups = (['active', 'completed'] as const)
+  .map((status) => ({ status, list: items.filter((i) => i.entry.data.status === status) }))
+  .filter((g) => g.list.length > 0);
+---
+
+<BaseLayout locale={locale} title={t(locale, 'projects.title')}>
+  <div class="page-head">
+    <h1>{t(locale, 'projects.title')}</h1>
+  </div>
+  {items.length === 0 && <p class="empty">{t(locale, 'common.empty')}</p>}
+  {groups.map((g) => (
+    <section class="section" aria-labelledby={`s-${g.status}`}>
+      <h2 id={`s-${g.status}`}>{label(locale, 'projects', g.status)}</h2>
+      <ul class="card-grid">
+        {g.list.map((item) => (
+          <li>
+            <ProjectCard item={item} locale={locale} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</BaseLayout>

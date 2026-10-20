@@ -1,0 +1,61 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import MemberCard from '../../../components/MemberCard.astro';
+import { localeStaticPaths } from '../../../lib/i18n-routes';
+import { getPublished } from '../../../lib/content';
+import { byOrderThenName } from '../../../lib/people';
+import { label } from '../../../lib/labels';
+import { localeFromParam, t } from '../../../i18n';
+
+export function getStaticPaths() {
+  return localeStaticPaths();
+}
+
+const locale = localeFromParam(Astro.params.locale);
+const ROLES = ['professor', 'lecturer', 'postdoc', 'phd', 'master', 'undergrad', 'staff'] as const;
+
+const all = await getPublished('members');
+const sort = byOrderThenName(locale);
+const current = all.filter((m) => m.data.status === 'current').sort(sort);
+const groups = ROLES.map((role) => ({
+  role,
+  list: current.filter((m) => m.data.role === role),
+})).filter((g) => g.list.length > 0);
+const alumni = all
+  .filter((m) => m.data.status === 'alumni')
+  .sort((a, b) => (b.data.graduated ?? 0) - (a.data.graduated ?? 0) || sort(a, b));
+---
+
+<BaseLayout locale={locale} title={t(locale, 'members.title')}>
+  <div class="page-head">
+    <h1>{t(locale, 'members.title')}</h1>
+  </div>
+
+  {all.length === 0 && <p class="empty">{t(locale, 'common.empty')}</p>}
+
+  {groups.map((g) => (
+    <section class="section" aria-labelledby={`role-${g.role}`}>
+      <h2 id={`role-${g.role}`}>{label(locale, 'role', g.role)}</h2>
+      <ul class="card-grid">
+        {g.list.map((m) => (
+          <li>
+            <MemberCard member={m} locale={locale} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+
+  {alumni.length > 0 && (
+    <section class="section" aria-labelledby="alumni">
+      <h2 id="alumni">{t(locale, 'members.alumni')}</h2>
+      <ul class="card-grid">
+        {alumni.map((m) => (
+          <li>
+            <MemberCard member={m} locale={locale} alumni />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+</BaseLayout>

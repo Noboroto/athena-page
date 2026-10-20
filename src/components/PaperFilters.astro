@@ -1,0 +1,60 @@
+---
+import { t, type Locale } from '../i18n';
+import { label } from '../lib/labels';
+
+interface Props {
+  locale: Locale;
+  types: string[];
+  tags: string[];
+}
+const { locale, types, tags } = Astro.props;
+---
+
+<form class="filters" data-paper-filters aria-label={t(locale, 'papers.filters')} hidden>
+  <label>
+    {t(locale, 'papers.filterType')}
+    <select name="type">
+      <option value="">{t(locale, 'papers.all')}</option>
+      {types.map((v) => (
+        <option value={v}>{label(locale, 'paperType', v)}</option>
+      ))}
+    </select>
+  </label>
+  {tags.length > 0 && (
+    <label>
+      {t(locale, 'papers.filterTag')}
+      <select name="tag">
+        <option value="">{t(locale, 'papers.all')}</option>
+        {tags.map((v) => (
+          <option value={v.toLowerCase()}>{v}</option>
+        ))}
+      </select>
+    </label>
+  )}
+</form>
+<p class="empty" data-no-match hidden>
+  {t(locale, 'papers.noMatch')}
+</p>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('[data-paper-filters]');
+  if (form) {
+    form.hidden = false;
+    const items = Array.from(document.querySelectorAll<HTMLElement>('[data-paper]'));
+    const groups = Array.from(document.querySelectorAll<HTMLElement>('[data-year-group]'));
+    const empty = document.querySelector<HTMLElement>('[data-no-match]');
+
+    const apply = () => {
+      const data = new FormData(form);
+      const type = String(data.get('type') ?? '');
+      const tag = String(data.get('tag') ?? '');
+      for (const el of items) {
+        const tags = (el.dataset.tags ?? '').split('|');
+        el.hidden = Boolean((type && el.dataset.type !== type) || (tag && !tags.includes(tag)));
+      }
+      for (const g of groups) g.hidden = !g.querySelector('[data-paper]:not([hidden])');
+      if (empty) empty.hidden = items.some((el) => !el.hidden);
+    };
+    form.addEventListener('change', apply);
+  }
+</script>

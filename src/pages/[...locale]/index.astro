@@ -1,0 +1,92 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Markdown from '../../components/Markdown.astro';
+import NewsCard from '../../components/NewsCard.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import PaperItem from '../../components/PaperItem.astro';
+import { localeStaticPaths } from '../../lib/i18n-routes';
+import { getSite, siteText } from '../../lib/site';
+import { getPublished } from '../../lib/content';
+import { localizedItems } from '../../lib/localized';
+import { resolveAuthors, authorName } from '../../lib/people';
+import { bibtexFor } from '../../lib/bibtex';
+import { localeFromParam, localePath, t } from '../../i18n';
+
+export function getStaticPaths() {
+  return localeStaticPaths();
+}
+
+const locale = localeFromParam(Astro.params.locale);
+const { name, tagline, intro } = siteText(getSite(), locale);
+
+const [news, projects, papers] = await Promise.all([
+  localizedItems('news', locale),
+  localizedItems('projects', locale),
+  getPublished('papers'),
+]);
+const latestNews = news.slice(0, 5);
+const activeProjects = projects.filter((p) => p.entry.data.status === 'active').slice(0, 4);
+const featured = await Promise.all(
+  papers
+    .filter((p) => p.data.featured)
+    .slice(0, 5)
+    .map(async (paper) => {
+      const authors = await resolveAuthors(paper.data.authors);
+      return { paper, authors, bibtex: bibtexFor(paper, authors.map(authorName)) };
+    }),
+);
+---
+
+<BaseLayout locale={locale} description={tagline}>
+  <section class="hero">
+    <h1>{name}</h1>
+    <p class="hero__tagline">{tagline}</p>
+    <Markdown source={intro} />
+  </section>
+
+  {latestNews.length > 0 && (
+    <section class="section" aria-labelledby="h-news">
+      <div class="section__head">
+        <h2 id="h-news">{t(locale, 'home.latestNews')}</h2>
+        <a href={localePath(locale, '/news/')}>{t(locale, 'common.viewAll')}</a>
+      </div>
+      <ul class="card-grid">
+        {latestNews.map((item) => (
+          <li>
+            <NewsCard item={item} locale={locale} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {featured.length > 0 && (
+    <section class="section" aria-labelledby="h-papers">
+      <div class="section__head">
+        <h2 id="h-papers">{t(locale, 'home.featuredPapers')}</h2>
+        <a href={localePath(locale, '/papers/')}>{t(locale, 'common.viewAll')}</a>
+      </div>
+      <ul class="stack">
+        {featured.map((f) => (
+          <PaperItem paper={f.paper} authors={f.authors} bibtex={f.bibtex} locale={locale} />
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {activeProjects.length > 0 && (
+    <section class="section" aria-labelledby="h-projects">
+      <div class="section__head">
+        <h2 id="h-projects">{t(locale, 'home.activeProjects')}</h2>
+        <a href={localePath(locale, '/projects/')}>{t(locale, 'common.viewAll')}</a>
+      </div>
+      <ul class="card-grid">
+        {activeProjects.map((item) => (
+          <li>
+            <ProjectCard item={item} locale={locale} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+</BaseLayout>

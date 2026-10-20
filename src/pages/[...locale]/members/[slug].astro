@@ -1,0 +1,129 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import MemberAvatar from '../../../components/MemberAvatar.astro';
+import LinkList from '../../../components/LinkList.astro';
+import Markdown from '../../../components/Markdown.astro';
+import NewsCard from '../../../components/NewsCard.astro';
+import ProjectCard from '../../../components/ProjectCard.astro';
+import PaperItem from '../../../components/PaperItem.astro';
+import { getPublished } from '../../../lib/content';
+import { localeStaticPaths } from '../../../lib/i18n-routes';
+import { itemsForMember, resolveAuthors, authorName } from '../../../lib/people';
+import { bibtexFor } from '../../../lib/bibtex';
+import { label } from '../../../lib/labels';
+import { localeFromParam, t } from '../../../i18n';
+
+export async function getStaticPaths() {
+  const members = await getPublished('members');
+  return localeStaticPaths().flatMap(({ params }) =>
+    members.map((member) => ({ params: { ...params, slug: member.id }, props: { member } })),
+  );
+}
+
+const locale = localeFromParam(Astro.params.locale);
+const { member } = Astro.props;
+const { data } = member;
+
+const { Content } = await render(member);
+const hasBody = Boolean(member.body?.trim());
+const useEnglishBio = locale === 'en' && Boolean(data.bio_en?.trim());
+const bioViOnly = locale === 'en' && !useEnglishBio && hasBody;
+const position =
+  locale === 'en' ? (data.position_en ?? data.position_vi) : (data.position_vi ?? data.position_en);
+
+const items = await itemsForMember(member.id, locale);
+const papers = await Promise.all(
+  items.papers.map(async (paper) => {
+    const authors = await resolveAuthors(paper.data.authors);
+    return { paper, authors, bibtex: bibtexFor(paper, authors.map(authorName)) };
+  }),
+);
+---
+
+<BaseLayout locale={locale} title={data.name} description={position}>
+  <div class="member-profile">
+    <MemberAvatar name={data.name} avatar={data.avatar} size={120} />
+    <div>
+      <h1>{data.name}</h1>
+      {position && <p>{position}</p>}
+      <p>
+        {label(locale, 'role', data.role)}
+        {data.joined && ` · ${t(locale, 'members.joined')} ${data.joined}`}
+      </p>
+      {data.status === 'alumni' && (data.graduated || data.now_at) && (
+        <p>
+          {data.graduated && `${t(locale, 'members.graduated')} ${data.graduated}`}
+          {data.graduated && data.now_at && ' · '}
+          {data.now_at && `${t(locale, 'members.nowAt')} ${data.now_at}`}
+        </p>
+      )}
+      <LinkList locale={locale} links={data.links} email={data.email_public} />
+    </div>
+  </div>
+
+  {data.interests.length > 0 && (
+    <section class="section" aria-labelledby="h-interests">
+      <h2 id="h-interests">{t(locale, 'members.interests')}</h2>
+      <ul class="chips">
+        {data.interests.map((i) => (
+          <li class="chip">{i}</li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {useEnglishBio ? (
+    <Markdown source={data.bio_en ?? ''} />
+  ) : (
+    hasBody && (
+      <div lang="vi">
+        {bioViOnly && (
+          <p>
+            <span class="badge badge--warn">{t(locale, 'members.bioViOnly')}</span>
+          </p>
+        )}
+        <div class="prose">
+          <Content />
+        </div>
+      </div>
+    )
+  )}
+
+  {papers.length > 0 && (
+    <section class="section" aria-labelledby="h-papers">
+      <h2 id="h-papers">{t(locale, 'nav.papers')}</h2>
+      <ul class="stack">
+        {papers.map((p) => (
+          <PaperItem paper={p.paper} authors={p.authors} bibtex={p.bibtex} locale={locale} />
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {items.projects.length > 0 && (
+    <section class="section" aria-labelledby="h-projects">
+      <h2 id="h-projects">{t(locale, 'nav.projects')}</h2>
+      <ul class="card-grid">
+        {items.projects.map((item) => (
+          <li>
+            <ProjectCard item={item} locale={locale} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {items.news.length > 0 && (
+    <section class="section" aria-labelledby="h-news">
+      <h2 id="h-news">{t(locale, 'nav.news')}</h2>
+      <ul class="card-grid">
+        {items.news.map((item) => (
+          <li>
+            <NewsCard item={item} locale={locale} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+</BaseLayout>

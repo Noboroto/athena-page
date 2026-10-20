@@ -1,0 +1,40 @@
+---
+import MemberAvatar from './MemberAvatar.astro';
+import { localePath, t, type Locale } from '../i18n';
+import type { Member } from '../lib/people';
+
+interface Props {
+  member: Member;
+  locale: Locale;
+  alumni?: boolean;
+}
+
+const { member, locale, alumni = false } = Astro.props;
+const { data } = member;
+const position =
+  locale === 'en' ? (data.position_en ?? data.position_vi) : (data.position_vi ?? data.position_en);
+---
+
+<article class="card member-card">
+  <MemberAvatar name={data.name} avatar={data.avatar} />
+  <div class="member-card__body">
+    <h3>
+      <a href={localePath(locale, `/members/${member.id}/`)}>{data.name}</a>
+    </h3>
+    {position && <p>{position}</p>}
+    {alumni && (data.graduated || data.now_at) && (
+      <p>
+        {data.graduated && `${t(locale, 'members.graduated')} ${data.graduated}`}
+        {data.graduated && data.now_at && ' · '}
+        {data.now_at && `${t(locale, 'members.nowAt')} ${data.now_at}`}
+      </p>
+    )}
+    {!alumni && data.interests.length > 0 && (
+      <ul class="chips">
+        {data.interests.slice(0, 4).map((i) => (
+          <li class="chip">{i}</li>
+        ))}
+      </ul>
+    )}
+  </div>
+</article>

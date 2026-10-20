@@ -1,0 +1,42 @@
+---
+import CategoryBadge from './CategoryBadge.astro';
+import ViOnlyBadge from './ViOnlyBadge.astro';
+import { formatDate, isoDate } from '../lib/format';
+import { withBase } from '../lib/url';
+import { t, type Locale } from '../i18n';
+import type { LocalizedItem } from '../lib/localized';
+
+interface Props {
+  item: LocalizedItem<'news'>;
+  /** Language of the surrounding page. */
+  locale: Locale;
+}
+
+const { item, locale } = Astro.props;
+const { data } = item.entry;
+---
+
+<article class="card" lang={item.lang}>
+  {data.cover && (
+    <div class="card__cover">
+      <img
+        src={withBase(data.cover)}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        width="640"
+        height="360"
+      />
+    </div>
+  )}
+  <div class="meta">
+    <CategoryBadge locale={item.lang} category={data.category} />
+    <time datetime={isoDate(data.date)}>{formatDate(data.date, item.lang)}</time>
+    {item.viOnly && <ViOnlyBadge locale={locale} />}
+    {data.draft && <span class="badge badge--muted">{t(locale, 'label.draft')}</span>}
+  </div>
+  <h3>
+    <a href={item.href}>{data.title}</a>
+  </h3>
+  {data.summary && <p>{data.summary}</p>}
+</article>

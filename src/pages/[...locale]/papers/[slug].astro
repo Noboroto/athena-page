@@ -1,0 +1,119 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import AuthorList from '../../../components/AuthorList.astro';
+import CopyButton from '../../../components/CopyButton.astro';
+import LinkList from '../../../components/LinkList.astro';
+import { getPublished } from '../../../lib/content';
+import { localeStaticPaths } from '../../../lib/i18n-routes';
+import { localizedItems } from '../../../lib/localized';
+import { resolveAuthors, authorName } from '../../../lib/people';
+import { bibtexFor } from '../../../lib/bibtex';
+import { formatDate, isoDate } from '../../../lib/format';
+import { label } from '../../../lib/labels';
+import { hreflangFor } from '../../../lib/alternates';
+import { localeFromParam, localePath, t } from '../../../i18n';
+
+export async function getStaticPaths() {
+  const papers = await getPublished('papers');
+  return localeStaticPaths().flatMap(({ params }) =>
+    papers.map((paper) => ({ params: { ...params, slug: paper.id }, props: { paper } })),
+  );
+}
+
+const locale = localeFromParam(Astro.params.locale);
+const { paper } = Astro.props;
+const { data } = paper;
+const { Content } = await render(paper);
+
+const authors = await resolveAuthors(data.authors);
+const bibtex = bibtexFor(paper, authors.map(authorName));
+
+const [projects, news] = await Promise.all([
+  localizedItems('projects', locale),
+  localizedItems('news', locale),
+]);
+const relatedProjects = projects.filter((p) => data.projects.includes(p.slug));
+const relatedNews = news.filter((n) => n.entry.data.papers.includes(paper.id));
+
+const path = `/papers/${paper.id}/`;
+const alternates = hreflangFor(
+  { vi: localePath('vi', path), en: localePath('en', path) },
+  Astro.site!,
+);
+---
+
+<BaseLayout
+  locale={locale}
+  title={data.title}
+  description={`${data.venue}, ${data.date.getUTCFullYear()}`}
+  alternates={alternates}
+  ogType="article"
+>
+  <article>
+    <header class="article-head">
+      <h1>{data.title}</h1>
+      <p class="paper__authors">
+        <AuthorList authors={authors} locale={locale} />
+      </p>
+      <div class="meta">
+        <span class="badge">{label(locale, 'paperType', data.type)}</span>
+        {data.status !== 'published' && (
+          <span class="badge badge--muted">{label(locale, 'paperStatus', data.status)}</span>
+        )}
+        {data.draft && <span class="badge badge--muted">{t(locale, 'label.draft')}</span>}
+        <span>{data.venue_short ? `${data.venue_short} - ${data.venue}` : data.venue}</span>
+        <time datetime={isoDate(data.date)}>{formatDate(data.date, locale, 'month')}</time>
+      </div>
+      <LinkList locale={locale} links={data.links} />
+      {data.tags.length > 0 && (
+        <ul class="chips" style="margin-top:.75rem">
+          {data.tags.map((tag) => (
+            <li class="chip">{tag}</li>
+          ))}
+        </ul>
+      )}
+    </header>
+
+    {paper.body?.trim() && (
+      <section aria-labelledby="h-abstract">
+        <h2 id="h-abstract">{t(locale, 'papers.abstract')}</h2>
+        <div class="prose">
+          <Content />
+        </div>
+      </section>
+    )}
+
+    <section class="section bibtex" aria-labelledby="h-bibtex">
+      <h2 id="h-bibtex">{t(locale, 'papers.bibtex')}</h2>
+      <CopyButton locale={locale} target="bibtex-text" />
+      <pre id="bibtex-text" data-pagefind-ignore>{bibtex}</pre>
+    </section>
+
+    {relatedProjects.length > 0 && (
+      <section class="section" aria-labelledby="h-projects">
+        <h2 id="h-projects">{t(locale, 'papers.related')}</h2>
+        <ul>
+          {relatedProjects.map((p) => (
+            <li lang={p.lang}>
+              <a href={p.href}>{p.entry.data.title}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    {relatedNews.length > 0 && (
+      <section class="section" aria-labelledby="h-news">
+        <h2 id="h-news">{t(locale, 'papers.mentionedIn')}</h2>
+        <ul>
+          {relatedNews.map((n) => (
+            <li lang={n.lang}>
+              <a href={n.href}>{n.entry.data.title}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </article>
+</BaseLayout>

@@ -1,0 +1,47 @@
+---
+import { localePath, t, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+  current: number;
+  total: number;
+  /** Base list path without page suffix, e.g. "/news/". */
+  basePath: string;
+}
+
+const { locale, current, total, basePath } = Astro.props;
+const hrefFor = (n: number) => localePath(locale, n === 1 ? basePath : `${basePath}page/${n}/`);
+const pages = Array.from({ length: total }, (_, i) => i + 1);
+---
+
+{total > 1 && (
+  <nav class="pagination" aria-label={t(locale, 'pagination.label')}>
+    <ul>
+      {current > 1 && (
+        <li>
+          <a href={hrefFor(current - 1)} rel="prev">
+            {t(locale, 'pagination.prev')}
+          </a>
+        </li>
+      )}
+      {pages.map((n) => (
+        <li>
+          {n === current ? (
+            <span aria-current="page">{n}</span>
+          ) : (
+            <a href={hrefFor(n)} aria-label={`${t(locale, 'pagination.page')} ${n}`}>
+              {n}
+            </a>
+          )}
+        </li>
+      ))}
+      {current < total && (
+        <li>
+          <a href={hrefFor(current + 1)} rel="next">
+            {t(locale, 'pagination.next')}
+          </a>
+        </li>
+      )}
+    </ul>
+  </nav>
+)}

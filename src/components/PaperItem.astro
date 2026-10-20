@@ -1,0 +1,52 @@
+---
+import AuthorList from './AuthorList.astro';
+import CopyButton from './CopyButton.astro';
+import LinkList from './LinkList.astro';
+import { localePath, t, type Locale } from '../i18n';
+import { label } from '../lib/labels';
+import type { Author } from '../lib/people';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  paper: CollectionEntry<'papers'>;
+  authors: Author[];
+  bibtex: string;
+  locale: Locale;
+}
+
+const { paper, authors, bibtex, locale } = Astro.props;
+const { data } = paper;
+const bibId = `bib-${paper.id}`;
+---
+
+<li
+  class="paper"
+  data-paper
+  data-type={data.type}
+  data-tags={data.tags.map((x) => x.toLowerCase()).join('|')}
+>
+  <h3>
+    <a href={localePath(locale, `/papers/${paper.id}/`)}>{data.title}</a>
+  </h3>
+  <p class="paper__authors">
+    <AuthorList authors={authors} locale={locale} />
+  </p>
+  <p class="paper__venue">
+    {data.venue_short ? `${data.venue_short} - ${data.venue}` : data.venue}
+  </p>
+  <div class="meta">
+    <span class="badge">{label(locale, 'paperType', data.type)}</span>
+    {data.status !== 'published' && (
+      <span class="badge badge--muted">{label(locale, 'paperStatus', data.status)}</span>
+    )}
+    {data.draft && <span class="badge badge--muted">{t(locale, 'label.draft')}</span>}
+    {data.tags.map((tag) => (
+      <span class="chip">{tag}</span>
+    ))}
+  </div>
+  <div class="paper__actions">
+    <LinkList locale={locale} links={data.links} />
+    <CopyButton locale={locale} target={bibId} />
+  </div>
+  <pre id={bibId} class="bibtex-text" hidden data-pagefind-ignore>{bibtex}</pre>
+</li>

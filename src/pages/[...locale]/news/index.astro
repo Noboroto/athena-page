@@ -1,0 +1,17 @@
+---
+import NewsListPage from '../../../components/NewsListPage.astro';
+import { localeStaticPaths } from '../../../lib/i18n-routes';
+import { localizedItems } from '../../../lib/localized';
+import { localeFromParam } from '../../../i18n';
+import { PAGE_SIZE } from '../../../lib/pagination';
+
+export function getStaticPaths() {
+  return localeStaticPaths();
+}
+
+const locale = localeFromParam(Astro.params.locale);
+const all = await localizedItems('news', locale);
+const total = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+---
+
+<NewsListPage locale={locale} items={all.slice(0, PAGE_SIZE)} current={1} total={total} />

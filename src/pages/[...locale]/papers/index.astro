@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PaperItem from '../../../components/PaperItem.astro';
+import PaperFilters from '../../../components/PaperFilters.astro';
+import { localeStaticPaths } from '../../../lib/i18n-routes';
+import { getPublished } from '../../../lib/content';
+import { resolveAuthors, authorName } from '../../../lib/people';
+import { bibtexFor } from '../../../lib/bibtex';
+import { localeFromParam, t } from '../../../i18n';
+
+export function getStaticPaths() {
+  return localeStaticPaths();
+}
+
+const locale = localeFromParam(Astro.params.locale);
+const papers = await getPublished('papers');
+
+const rows = await Promise.all(
+  papers.map(async (paper) => {
+    const authors = await resolveAuthors(paper.data.authors);
+    return { paper, authors, bibtex: bibtexFor(paper, authors.map(authorName)) };
+  }),
+);
+
+const byYear = new Map<number, typeof rows>();
+for (const row of rows) {
+  const year = row.paper.data.date.getUTCFullYear();
+  byYear.set(year, [...(byYear.get(year) ?? []), row]);
+}
+const years = [...byYear.keys()].sort((a, b) => b - a);
+
+const types = [...new Set(papers.map((p) => p.data.type))];
+const tags = [
+  ...new Map(papers.flatMap((p) => p.data.tags).map((x) => [x.toLowerCase(), x])).values(),
+].sort((a, b) => a.localeCompare(b, locale));
+---
+
+<BaseLayout locale={locale} title={t(locale, 'papers.title')}>
+  <div class="page-head">
+    <h1>{t(locale, 'papers.title')}</h1>
+  </div>
+
+  {rows.length === 0 && <p class="empty">{t(locale, 'common.empty')}</p>}
+  {rows.length > 0 && <PaperFilters locale={locale} types={types} tags={tags} />}
+
+  {years.map((year) => (
+    <section class="year-group" data-year-group aria-labelledby={`y-${year}`}>
+      <h2 id={`y-${year}`}>{year}</h2>
+      <ul class="stack">
+        {byYear.get(year)?.map((r) => (
+          <PaperItem paper={r.paper} authors={r.authors} bibtex={r.bibtex} locale={locale} />
+        ))}
+      </ul>
+    </section>
+  ))}
+</BaseLayout>

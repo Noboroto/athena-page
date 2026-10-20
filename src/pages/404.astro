@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { localePath, t } from '../i18n';
+---
+
+<!-- One bilingual page: GitHub Pages serves a single 404.html for every path. -->
+<BaseLayout locale="vi" title={t('vi', 'notfound.title')} indexed={false}>
+  <section lang="vi">
+    <h1>{t('vi', 'notfound.title')}</h1>
+    <p>{t('vi', 'notfound.text')}</p>
+    <p>
+      <a href={localePath('vi')}>{t('vi', 'notfound.home')}</a>
+    </p>
+  </section>
+  <section lang="en" class="section">
+    <h2>{t('en', 'notfound.title')}</h2>
+    <p>{t('en', 'notfound.text')}</p>
+    <p>
+      <a href={localePath('en')}>{t('en', 'notfound.home')}</a>
+    </p>
+  </section>
+</BaseLayout>

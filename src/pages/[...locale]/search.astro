@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PagefindConfig from 'astro-pagefind/components/PagefindConfig.astro';
+import { localeStaticPaths } from '../../lib/i18n-routes';
+import { localeFromParam, t } from '../../i18n';
+
+export function getStaticPaths() {
+  return localeStaticPaths();
+}
+
+const locale = localeFromParam(Astro.params.locale);
+---
+
+<BaseLayout locale={locale} title={t(locale, 'search.title')} indexed={false}>
+  <PagefindConfig slot="head" instance="page" />
+  <div class="page-head">
+    <h1>{t(locale, 'search.title')}</h1>
+    <p>{t(locale, 'search.hint')}</p>
+  </div>
+  <div class="search-box">
+    <pagefind-input instance="page" placeholder={t(locale, 'search.placeholder')}></pagefind-input>
+    <pagefind-summary instance="page"></pagefind-summary>
+    <pagefind-results instance="page"></pagefind-results>
+  </div>
+  <noscript>
+    <p class="empty">{t(locale, 'search.noscript')}</p>
+  </noscript>
+</BaseLayout>

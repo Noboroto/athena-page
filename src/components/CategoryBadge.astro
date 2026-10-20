@@ -1,0 +1,12 @@
+---
+import type { Locale } from '../i18n';
+import { label } from '../lib/labels';
+
+interface Props {
+  locale: Locale;
+  category: string;
+}
+const { locale, category } = Astro.props;
+---
+
+<span class="badge">{label(locale, 'category', category)}</span>

@@ -1,0 +1,53 @@
+---
+import { t, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+  /** id of the element whose text is copied; it is selected when the clipboard is blocked. */
+  target: string;
+}
+const { locale, target } = Astro.props;
+---
+
+<span class="copy" data-copy-wrap hidden>
+  <button
+    type="button"
+    class="btn"
+    data-copy-target={target}
+    data-ok={t(locale, 'papers.copied')}
+    data-fail={t(locale, 'papers.copyFailed')}
+  >
+    {t(locale, 'papers.copyBibtex')}
+  </button>
+  <span data-copy-status role="status"></span>
+</span>
+
+<script>
+  const wraps = document.querySelectorAll<HTMLElement>('[data-copy-wrap]');
+  wraps.forEach((w) => (w.hidden = false));
+
+  function select(el: HTMLElement) {
+    el.hidden = false;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  }
+
+  document.addEventListener('click', async (event) => {
+    const btn = (event.target as Element).closest<HTMLButtonElement>('[data-copy-target]');
+    if (!btn) return;
+    const source = document.getElementById(btn.dataset.copyTarget ?? '');
+    const status = btn.parentElement?.querySelector<HTMLElement>('[data-copy-status]');
+    if (!source) return;
+    try {
+      await navigator.clipboard.writeText(source.textContent ?? '');
+      if (status) status.textContent = btn.dataset.ok ?? '';
+    } catch {
+      // Clipboard blocked (permissions, insecure context): leave the text selected for manual copy.
+      select(source);
+      if (status) status.textContent = btn.dataset.fail ?? '';
+    }
+  });
+</script>

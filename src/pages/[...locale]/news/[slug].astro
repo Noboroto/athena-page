@@ -1,0 +1,122 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import CategoryBadge from '../../../components/CategoryBadge.astro';
+import { getPublished, getTranslation } from '../../../lib/content';
+import { localeStaticPaths } from '../../../lib/i18n-routes';
+import { memberMap } from '../../../lib/people';
+import { formatDate, isoDate } from '../../../lib/format';
+import { hreflangFor } from '../../../lib/alternates';
+import { withBase } from '../../../lib/url';
+import { localeFromParam, localePath, t } from '../../../i18n';
+
+// Only (locale, slug) pairs backed by a real file get a page: no fallback pages.
+export async function getStaticPaths() {
+  const out = [];
+  for (const { params } of localeStaticPaths()) {
+    const locale = localeFromParam(params.locale);
+    for (const entry of await getPublished('news', { locale })) {
+      out.push({
+        params: { ...params, slug: entry.id.slice(entry.id.indexOf('/') + 1) },
+        props: { entry },
+      });
+    }
+  }
+  return out;
+}
+
+const locale = localeFromParam(Astro.params.locale);
+const { slug } = Astro.params;
+const { entry } = Astro.props;
+const { data } = entry;
+const { Content } = await render(entry);
+
+const tr = await getTranslation('news', slug);
+const path = `/news/${slug}/`;
+const alternates = hreflangFor(
+  {
+    vi: tr.vi ? localePath('vi', path) : undefined,
+    en: tr.en ? localePath('en', path) : undefined,
+  },
+  Astro.site!,
+);
+const other = locale === 'vi' ? 'en' : 'vi';
+const switchHref = tr[other] ? localePath(other, path) : localePath(other, '/news/');
+
+const members = await memberMap();
+const author = data.author ? members.get(data.author) : undefined;
+const people = data.members.map((m) => members.get(m)).filter((m) => m !== undefined);
+const papers = (await getPublished('papers')).filter((p) => data.papers.includes(p.id));
+---
+
+<BaseLayout
+  locale={locale}
+  title={data.title}
+  description={data.summary}
+  alternates={alternates}
+  switchHref={switchHref}
+  ogType="article"
+  image={data.cover}
+>
+  <article>
+    <header class="article-head">
+      <div class="meta">
+        <CategoryBadge locale={locale} category={data.category} />
+        <time datetime={isoDate(data.date)}>{formatDate(data.date, locale)}</time>
+        {author && (
+          <span>
+            {t(locale, 'news.author')}{' '}
+            <a href={localePath(locale, `/members/${author.id}/`)}>{author.data.name}</a>
+          </span>
+        )}
+        {data.draft && <span class="badge badge--muted">{t(locale, 'label.draft')}</span>}
+      </div>
+      <h1>{data.title}</h1>
+      {data.summary && <p>{data.summary}</p>}
+    </header>
+
+    {data.cover && (
+      <figure class="article-cover">
+        <img src={withBase(data.cover)} alt="" width="960" height="540" decoding="async" />
+      </figure>
+    )}
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    {data.tags.length > 0 && (
+      <ul class="chips" style="margin-top:1.5rem">
+        {data.tags.map((tag) => (
+          <li class="chip">{tag}</li>
+        ))}
+      </ul>
+    )}
+
+    {people.length > 0 && (
+      <section class="section" aria-labelledby="h-people">
+        <h2 id="h-people">{t(locale, 'news.related')}</h2>
+        <ul>
+          {people.map((m) => (
+            <li>
+              <a href={localePath(locale, `/members/${m.id}/`)}>{m.data.name}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    {papers.length > 0 && (
+      <section class="section" aria-labelledby="h-papers">
+        <h2 id="h-papers">{t(locale, 'news.relatedPapers')}</h2>
+        <ul>
+          {papers.map((p) => (
+            <li>
+              <a href={localePath(locale, `/papers/${p.id}/`)}>{p.data.title}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </article>
+</BaseLayout>

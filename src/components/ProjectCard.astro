@@ -1,0 +1,48 @@
+---
+import ViOnlyBadge from './ViOnlyBadge.astro';
+import { withBase } from '../lib/url';
+import { label } from '../lib/labels';
+import { t, type Locale } from '../i18n';
+import type { LocalizedItem } from '../lib/localized';
+
+interface Props {
+  item: LocalizedItem<'projects'>;
+  locale: Locale;
+}
+
+const { item, locale } = Astro.props;
+const { data } = item.entry;
+---
+
+<article class="card" lang={item.lang}>
+  {data.cover && (
+    <div class="card__cover">
+      <img
+        src={withBase(data.cover)}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        width="640"
+        height="360"
+      />
+    </div>
+  )}
+  <div class="meta">
+    <span class={data.status === 'active' ? 'badge' : 'badge badge--muted'}>
+      {label(item.lang, 'projects', data.status)}
+    </span>
+    {item.viOnly && <ViOnlyBadge locale={locale} />}
+    {data.draft && <span class="badge badge--muted">{t(locale, 'label.draft')}</span>}
+  </div>
+  <h3>
+    <a href={item.href}>{data.title}</a>
+  </h3>
+  {data.summary && <p>{data.summary}</p>}
+  {data.tags.length > 0 && (
+    <ul class="chips">
+      {data.tags.map((tag) => (
+        <li class="chip">{tag}</li>
+      ))}
+    </ul>
+  )}
+</article>

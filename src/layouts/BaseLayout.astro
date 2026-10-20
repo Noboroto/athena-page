@@ -1,0 +1,129 @@
+---
+import 'katex/dist/katex.min.css';
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { hreflangFor, type HreflangLink } from '../lib/alternates';
+import { getSite, siteText } from '../lib/site';
+import { splitPath } from '../lib/route';
+import { withBase } from '../lib/url';
+import { localePath, t, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+  title?: string;
+  description?: string;
+  /**
+   * hreflang pairs. Omit for pages that exist in both languages at the same path (home, list
+   * pages, members): the pair is derived from the URL. Pass [] to opt out, or an explicit list
+   * for pages whose translation may be missing (news, projects, papers).
+   */
+  alternates?: HreflangLink[];
+  /** Where the language switch points; defaults to the same page in the other language. */
+  switchHref?: string;
+  ogType?: 'website' | 'article';
+  image?: string;
+  /** false keeps the page out of the Pagefind index (search, 404). */
+  indexed?: boolean;
+}
+
+const {
+  locale,
+  title,
+  description,
+  alternates: explicitAlternates,
+  switchHref,
+  ogType = 'website',
+  image,
+  indexed = true,
+} = Astro.props;
+
+const { name, tagline } = siteText(getSite(), locale);
+const { rest } = splitPath(Astro.url.pathname);
+const alternates =
+  explicitAlternates ??
+  (indexed
+    ? hreflangFor(
+        { vi: localePath('vi', rest), en: localePath('en', rest) },
+        Astro.site ?? Astro.url,
+      )
+    : []);
+const pageTitle = title ? `${title} · ${name}` : name;
+const desc = description || tagline;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = image ? new URL(withBase(image), Astro.site).href : undefined;
+
+// GitHub Pages cannot send headers, so the policy ships as a meta tag. Pagefind needs
+// 'wasm-unsafe-eval' for its WebAssembly search core; KaTeX output uses inline styles.
+// Not applied in dev, where Vite injects inline HMR scripts.
+const csp = [
+  "default-src 'self'",
+  "script-src 'self' 'wasm-unsafe-eval'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data:",
+  "font-src 'self' data:",
+  "connect-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join('; ');
+
+const feeds = [
+  {
+    href: locale === 'vi' ? '/rss.xml' : '/en/rss.xml',
+    title: `${name} - ${t(locale, 'nav.news')}`,
+  },
+  { href: '/papers/rss.xml', title: `${name} - ${t(locale, 'nav.papers')}` },
+];
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {import.meta.env.PROD && <meta http-equiv="Content-Security-Policy" content={csp} />}
+    <title>{pageTitle}</title>
+    <meta name="description" content={desc} />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="canonical" href={canonical.href} />
+    <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
+    {alternates.map((a) => (
+      <link rel="alternate" hreflang={a.hreflang} href={a.href} />
+    ))}
+    {feeds.map((f) => (
+      <link
+        rel="alternate"
+        type="application/rss+xml"
+        title={f.title}
+        href={new URL(withBase(f.href), Astro.site).href}
+      />
+    ))}
+    <meta property="og:site_name" content={name} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={desc} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={canonical.href} />
+    <meta property="og:locale" content={locale === 'vi' ? 'vi_VN' : 'en_US'} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main" data-pagefind-ignore>
+      {t(locale, 'label.skip')}
+    </a>
+    <Header locale={locale} name={name} rest={rest} switchHref={switchHref} />
+    <main
+      id="main"
+      tabindex="-1"
+      data-pagefind-body={indexed ? '' : undefined}
+      data-pagefind-ignore={indexed ? undefined : 'all'}
+    >
+      <div class="container">
+        <slot />
+      </div>
+    </main>
+    <Footer locale={locale} name={name} email={getSite().contact_email || undefined} />
+  </body>
+</html>

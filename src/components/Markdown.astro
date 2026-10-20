@@ -1,0 +1,14 @@
+---
+import { renderMarkdown } from '../lib/markdown';
+
+interface Props {
+  source: string;
+  class?: string;
+}
+
+const { source, class: className = 'prose' } = Astro.props;
+// Output is produced by the sanitizing Markdown pipeline (raw HTML and javascript: links removed).
+const html = source.trim() ? await renderMarkdown(source) : '';
+---
+
+{html && <div class={className} set:html={html} />}

@@ -1,0 +1,28 @@
+---
+import NewsListPage from '../../../../components/NewsListPage.astro';
+import { localeStaticPaths } from '../../../../lib/i18n-routes';
+import { localizedItems } from '../../../../lib/localized';
+import { localeFromParam } from '../../../../i18n';
+import { PAGE_SIZE } from '../../../../lib/pagination';
+
+// Page 1 is /news/ itself; this route only emits pages 2..N.
+export async function getStaticPaths() {
+  const out = [];
+  for (const { params } of localeStaticPaths()) {
+    const all = await localizedItems('news', localeFromParam(params.locale));
+    const total = Math.ceil(all.length / PAGE_SIZE);
+    for (let page = 2; page <= total; page++) {
+      out.push({
+        params: { ...params, page: String(page) },
+        props: { items: all.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), total },
+      });
+    }
+  }
+  return out;
+}
+
+const locale = localeFromParam(Astro.params.locale);
+const { items, total } = Astro.props;
+---
+
+<NewsListPage locale={locale} items={items} current={Number(Astro.params.page)} total={total} />

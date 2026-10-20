@@ -1,0 +1,139 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import LinkList from '../../../components/LinkList.astro';
+import { getPublished, getTranslation } from '../../../lib/content';
+import { localeStaticPaths } from '../../../lib/i18n-routes';
+import { memberMap } from '../../../lib/people';
+import { formatDate } from '../../../lib/format';
+import { label } from '../../../lib/labels';
+import { hreflangFor } from '../../../lib/alternates';
+import { withBase } from '../../../lib/url';
+import { localeFromParam, localePath, t } from '../../../i18n';
+
+// Only (locale, slug) pairs backed by a real file get a page: no fallback pages.
+export async function getStaticPaths() {
+  const out = [];
+  for (const { params } of localeStaticPaths()) {
+    const locale = localeFromParam(params.locale);
+    for (const entry of await getPublished('projects', { locale })) {
+      out.push({
+        params: { ...params, slug: entry.id.slice(entry.id.indexOf('/') + 1) },
+        props: { entry },
+      });
+    }
+  }
+  return out;
+}
+
+const locale = localeFromParam(Astro.params.locale);
+const { slug } = Astro.params;
+const { entry } = Astro.props;
+const { data } = entry;
+const { Content } = await render(entry);
+
+const tr = await getTranslation('projects', slug);
+const path = `/projects/${slug}/`;
+const alternates = hreflangFor(
+  {
+    vi: tr.vi ? localePath('vi', path) : undefined,
+    en: tr.en ? localePath('en', path) : undefined,
+  },
+  Astro.site!,
+);
+const other = locale === 'vi' ? 'en' : 'vi';
+const switchHref = tr[other] ? localePath(other, path) : localePath(other, '/projects/');
+
+const members = await memberMap();
+const people = data.members.map((m) => members.get(m)).filter((m) => m !== undefined);
+const papers = (await getPublished('papers')).filter((p) => p.data.projects.includes(slug));
+const period =
+  data.start || data.end
+    ? `${data.start ? formatDate(data.start, locale, 'month') : ''} - ${
+        data.end ? formatDate(data.end, locale, 'month') : t(locale, 'projects.present')
+      }`
+    : undefined;
+---
+
+<BaseLayout
+  locale={locale}
+  title={data.title}
+  description={data.summary}
+  alternates={alternates}
+  switchHref={switchHref}
+  ogType="article"
+  image={data.cover}
+>
+  <article>
+    <header class="article-head">
+      <h1>{data.title}</h1>
+      <div class="meta">
+        <span class={data.status === 'active' ? 'badge' : 'badge badge--muted'}>
+          {label(locale, 'projects', data.status)}
+        </span>
+        {data.draft && <span class="badge badge--muted">{t(locale, 'label.draft')}</span>}
+      </div>
+      {data.summary && <p>{data.summary}</p>}
+    </header>
+
+    {data.cover && (
+      <figure class="article-cover">
+        <img src={withBase(data.cover)} alt="" width="960" height="540" decoding="async" />
+      </figure>
+    )}
+
+    <dl class="facts">
+      {period && (
+        <>
+          <dt>{t(locale, 'projects.period')}</dt>
+          <dd>{period}</dd>
+        </>
+      )}
+      {data.funding && (
+        <>
+          <dt>{t(locale, 'projects.funding')}</dt>
+          <dd>{data.funding}</dd>
+        </>
+      )}
+      {people.length > 0 && (
+        <>
+          <dt>{t(locale, 'projects.members')}</dt>
+          <dd>
+            {people.map((m, i) => (
+              <>
+                <a href={localePath(locale, `/members/${m.id}/`)}>{m.data.name}</a>
+                {i < people.length - 1 && ', '}
+              </>
+            ))}
+          </dd>
+        </>
+      )}
+    </dl>
+
+    <div class="prose">
+      <Content />
+    </div>
+    <LinkList locale={locale} links={data.links} />
+
+    {data.tags.length > 0 && (
+      <ul class="chips" style="margin-top:1rem">
+        {data.tags.map((tag) => (
+          <li class="chip">{tag}</li>
+        ))}
+      </ul>
+    )}
+
+    {papers.length > 0 && (
+      <section class="section" aria-labelledby="h-papers">
+        <h2 id="h-papers">{t(locale, 'projects.relatedPapers')}</h2>
+        <ul>
+          {papers.map((p) => (
+            <li>
+              <a href={localePath(locale, `/papers/${p.id}/`)}>{p.data.title}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </article>
+</BaseLayout>

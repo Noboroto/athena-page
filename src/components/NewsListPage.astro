@@ -1,0 +1,35 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import NewsCard from './NewsCard.astro';
+import Pagination from './Pagination.astro';
+import { t, type Locale } from '../i18n';
+import type { LocalizedItem } from '../lib/localized';
+
+interface Props {
+  locale: Locale;
+  items: LocalizedItem<'news'>[];
+  current: number;
+  total: number;
+}
+
+const { locale, items, current, total } = Astro.props;
+const title =
+  current > 1
+    ? `${t(locale, 'news.title')} - ${t(locale, 'pagination.page')} ${current}`
+    : t(locale, 'news.title');
+---
+
+<BaseLayout locale={locale} title={title} alternates={current > 1 ? [] : undefined}>
+  <div class="page-head">
+    <h1>{t(locale, 'news.title')}</h1>
+  </div>
+  {items.length === 0 && <p class="empty">{t(locale, 'common.empty')}</p>}
+  <ul class="card-grid">
+    {items.map((item) => (
+      <li>
+        <NewsCard item={item} locale={locale} />
+      </li>
+    ))}
+  </ul>
+  <Pagination locale={locale} current={current} total={total} basePath="/news/" />
+</BaseLayout>

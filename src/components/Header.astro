@@ -1,0 +1,49 @@
+---
+import LangSwitch from './LangSwitch.astro';
+import { localePath, t, type Locale } from '../i18n';
+import { withBase } from '../lib/url';
+
+interface Props {
+  locale: Locale;
+  name: string;
+  /** Locale-independent path of the current page, e.g. "/news/". */
+  rest: string;
+  switchHref?: string;
+}
+
+const { locale, name, rest, switchHref } = Astro.props;
+
+const nav = [
+  ['/', 'nav.home'],
+  ['/members/', 'nav.members'],
+  ['/papers/', 'nav.papers'],
+  ['/projects/', 'nav.projects'],
+  ['/news/', 'nav.news'],
+  ['/search/', 'nav.search'],
+] as const;
+
+const current = (path: string) => (path === '/' ? rest === '/' : rest.startsWith(path));
+---
+
+<header class="site-header" data-pagefind-ignore>
+  <div class="container site-header__bar">
+    <a class="brand" href={localePath(locale)}>
+      <img src={withBase('/favicon.svg')} alt="" width="28" height="28" />
+      <span>{name}</span>
+    </a>
+    <nav class="site-nav" aria-label={t(locale, 'nav.label')}>
+      <ul>
+        {nav.map(([path, key]) => (
+          <li>
+            <a href={localePath(locale, path)} aria-current={current(path) ? 'page' : undefined}>
+              {t(locale, key)}
+            </a>
+          </li>
+        ))}
+        <li>
+          <LangSwitch locale={locale} href={switchHref} rest={rest} />
+        </li>
+      </ul>
+    </nav>
+  </div>
+</header>

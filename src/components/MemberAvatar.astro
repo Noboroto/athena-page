@@ -1,0 +1,27 @@
+---
+import { withBase } from '../lib/url';
+
+interface Props {
+  name: string;
+  avatar?: string;
+  size?: number;
+}
+
+const { name, avatar, size = 72 } = Astro.props;
+
+const words = name.trim().split(/\s+/).filter(Boolean);
+const letters = [words[0], words.length > 1 ? words.at(-1) : undefined]
+  .filter((w): w is string => Boolean(w))
+  .map((w) => Array.from(w)[0]?.toLocaleUpperCase())
+  .join('');
+// Stable colour per name so the same person always gets the same tint.
+const hue = (Array.from(name).reduce((h, c) => (h * 31 + c.codePointAt(0)!) | 0, 7) >>> 0) % 6;
+---
+
+<span class={`avatar avatar--${hue + 1}`} style={`--size:${size / 16}rem`} aria-hidden="true">
+  {avatar ? (
+    <img src={withBase(avatar)} alt="" width={size} height={size} loading="lazy" decoding="async" />
+  ) : (
+    letters
+  )}
+</span>

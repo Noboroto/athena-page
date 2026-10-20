@@ -1,0 +1,35 @@
+---
+import { t, type Locale } from '../i18n';
+import { withBase } from '../lib/url';
+
+interface Props {
+  locale: Locale;
+  name: string;
+  email?: string;
+}
+
+const { locale, name, email } = Astro.props;
+const year = new Date().getFullYear();
+const rss = locale === 'vi' ? '/rss.xml' : '/en/rss.xml';
+---
+
+<footer class="site-footer" data-pagefind-ignore>
+  <div class="container site-footer__inner">
+    <span>
+      © {year} {name}
+    </span>
+    <ul>
+      {email && (
+        <li>
+          <a href={`mailto:${email}`}>{email}</a>
+        </li>
+      )}
+      <li>
+        <a href={withBase(rss)}>{t(locale, 'footer.rss')}</a>
+      </li>
+      <li>
+        <a href={withBase('/papers/rss.xml')}>{t(locale, 'footer.rssPapers')}</a>
+      </li>
+    </ul>
+  </div>
+</footer>

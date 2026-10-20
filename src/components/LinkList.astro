@@ -1,0 +1,37 @@
+---
+import { t, type Locale } from '../i18n';
+import { withBase } from '../lib/url';
+import { label } from '../lib/labels';
+
+interface Props {
+  locale: Locale;
+  links: Partial<Record<string, string>>;
+  email?: string;
+}
+
+const { locale, links, email } = Astro.props;
+const entries = Object.entries(links).filter((e): e is [string, string] => Boolean(e[1]));
+---
+
+{(entries.length > 0 || email) && (
+  <ul class="link-list">
+    {entries.map(([key, url]) => {
+      const external = /^https?:\/\//i.test(url);
+      return (
+        <li>
+          <a
+            href={external ? url : withBase(url)}
+            rel={external ? 'noopener noreferrer' : undefined}
+          >
+            {label(locale, 'link', key)}
+          </a>
+        </li>
+      );
+    })}
+    {email && (
+      <li>
+        <a href={`mailto:${email}`}>{t(locale, 'link.email')}</a>
+      </li>
+    )}
+  </ul>
+)}
