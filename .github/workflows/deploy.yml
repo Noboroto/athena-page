@@ -1,0 +1,83 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # workflow_dispatch can target any ref; only main may build or deploy.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      quarantined: ${{ steps.q.outputs.count }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # withastro/action detects pnpm from pnpm-lock.yaml, installs the version
+      # pinned in package.json#packageManager, runs `pnpm install`, then build-cmd,
+      # then uploads the Pages artifact. `astro build` is called directly so the
+      # `prebuild` hook (strict check-content) does not run after --quarantine.
+      - uses: withastro/action@3eafd002e65cc31b4f0eae0bb05450d521562247 # v6.1.3
+        with:
+          node-version: 24
+          build-cmd: pnpm --dir .github/scripts install --frozen-lockfile && pnpm check && pnpm lint && pnpm test && node scripts/check-content.mjs --quarantine && pnpm astro build
+      - id: q
+        if: always()
+        run: echo "count=$(grep -c '^- ' quarantine.md 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: quarantine
+          path: quarantine.md
+          if-no-files-found: ignore
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
+  notify:
+    needs: [build, deploy]
+    if: always() && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        continue-on-error: true
+        with:
+          name: quarantine
+      - run: bash .github/scripts/notify-deploy.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          COUNT: ${{ needs.build.outputs.quarantined }}

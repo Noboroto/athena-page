@@ -1,0 +1,493 @@
+# Pages CMS configuration (editor: https://editor.athena.noboroto.id.vn).
+#
+# This file only shapes the forms and the buttons. It is NOT a security boundary: the CMS sends
+# the action name, path and inputs from the browser, so every workflow re-validates them
+# (.github/scripts/payload.mjs, collections.mjs, safe-path.mjs). Keep field names in step with
+# src/content.config.ts and .github/scripts/collections.mjs; pages-yml.test.mjs checks the links.
+
+media:
+  - name: members
+    label: Ảnh thành viên
+    input: public/images/members
+    output: /images/members
+    rename: safe
+    extensions: [jpg, jpeg, png, webp]
+    actions:
+      - name: optimize-images
+        label: Tối ưu ảnh
+        workflow: optimize-images.yml
+        ref: main
+        confirm:
+          title: Tối ưu ảnh đại diện?
+          message: Chỉ ảnh đang dùng làm ảnh đại diện. Hãy lưu bài trước khi bấm.
+          button: Tối ưu
+  - name: news
+    label: Ảnh tin tức
+    input: public/images/news
+    output: /images/news
+    rename: safe
+    extensions: [jpg, jpeg, png, webp]
+  - name: projects
+    label: Ảnh dự án
+    input: public/images/projects
+    output: /images/projects
+    rename: safe
+    extensions: [jpg, jpeg, png, webp]
+  - name: papers
+    label: Ảnh paper
+    input: public/images/papers
+    output: /images/papers
+    rename: safe
+    extensions: [jpg, jpeg, png, webp]
+
+settings:
+  commit:
+    identity: user
+    templates:
+      create: 'content: add {path}'
+      update: 'content: update {path}'
+      delete: 'content: delete {path}'
+  content:
+    merge: true
+
+# Optional fields accept an empty value (`^$|...`) because the CMS submits "" for blank inputs.
+components:
+  url:
+    type: string
+    pattern:
+      regex: '^$|^https?://'
+      message: Cần bắt đầu bằng http:// hoặc https://
+  href:
+    type: string
+    pattern:
+      regex: '^$|^(https?://|/)'
+      message: Cần là URL http(s) hoặc đường dẫn bắt đầu bằng /
+  email:
+    type: string
+    pattern:
+      regex: '^$|^[^@\s]+@[^@\s]+\.[^@\s]+$'
+      message: Địa chỉ email không hợp lệ
+  links:
+    type: object
+    label: Liên kết
+    fields:
+      - { name: website, label: Website, component: url }
+      - { name: scholar, label: Google Scholar, component: url }
+      - { name: github, label: GitHub, component: url }
+      - { name: orcid, label: ORCID, component: url }
+      - { name: linkedin, label: LinkedIn, component: url }
+      - { name: doi, label: DOI, component: url }
+      - { name: arxiv, label: arXiv, component: url }
+      - { name: code, label: Mã nguồn, component: url }
+      - { name: video, label: Video, component: url }
+      - { name: pdf, label: PDF, component: href }
+      - { name: slides, label: Slides, component: href }
+  body:
+    type: rich-text
+    label: Nội dung
+    options:
+      format: markdown
+      switcher: true
+    description: 'Công thức toán ($...$ hoặc $$...$$) và ô [[...]]: viết ở chế độ Source và đừng mở lại bằng chế độ soạn thảo, vì chế độ đó thêm dấu \ làm hỏng chúng.'
+  draft:
+    type: boolean
+    label: Nháp
+    default: true
+    description: Bài nháp không hiện trên site. Tắt đi khi đã điền hết các ô [[...]].
+
+content:
+  - name: news-vi
+    label: Tin tức (VI)
+    type: collection
+    path: src/content/news/vi
+    subfolders: false
+    filename:
+      template: '{year}-{month}-{day}-{primary}.md'
+      field: create
+    view:
+      primary: title
+      fields: [title, date, category, draft]
+      sort: [date, title]
+      default: { sort: date, order: desc }
+    fields: &news-fields
+      - { name: title, label: Tiêu đề, type: string, required: true }
+      - { name: date, label: Ngày, type: date, required: true, options: { format: yyyy-MM-dd } }
+      - name: category
+        label: Loại
+        type: select
+        required: true
+        options:
+          values:
+            - { value: paper, label: Paper }
+            - { value: award, label: Giải thưởng }
+            - { value: defense, label: Bảo vệ }
+            - { value: graduation, label: Tốt nghiệp }
+            - { value: member, label: Thành viên }
+            - { value: seminar, label: Seminar }
+            - { value: talk, label: Báo cáo }
+            - { value: grant, label: Tài trợ }
+            - { value: recruitment, label: Tuyển sinh }
+            - { value: event, label: Sự kiện }
+            - { value: other, label: Khác }
+      - { name: summary, label: Tóm tắt, type: text }
+      - { name: cover, label: Ảnh bìa, type: image, options: { media: news } }
+      - name: author
+        label: Người viết
+        type: reference
+        options: { collection: members, value: '{name}', label: '{primary}' }
+      - name: members
+        label: Thành viên liên quan
+        type: reference
+        options: { collection: members, multiple: true, value: '{name}', label: '{primary}' }
+      - name: papers
+        label: Paper liên quan
+        type: reference
+        options: { collection: papers, multiple: true, value: '{name}', label: '{primary}' }
+      - { name: tags, label: Tag, type: string, list: true }
+      - { name: draft, component: draft }
+      - { name: body, component: body, options: { media: news } }
+    actions:
+      - name: from-template
+        label: Tạo từ mẫu
+        workflow: clone-entry.yml
+        ref: main
+        scope: collection
+        confirm: false
+        fields:
+          - name: template
+            label: Mẫu
+            type: select
+            required: true
+            options:
+              - { label: Báo cáo mời, value: templates/news/vi/bao-cao-moi.md }
+              - { label: Bảo vệ thành công, value: templates/news/vi/bao-ve-thanh-cong.md }
+              - { label: Chào thành viên mới, value: templates/news/vi/chao-thanh-vien-moi.md }
+              - { label: Dự án được tài trợ, value: templates/news/vi/du-an-duoc-tai-tro.md }
+              - { label: Giải thưởng, value: templates/news/vi/giai-thuong.md }
+              - { label: Paper được nhận, value: templates/news/vi/paper-duoc-nhan.md }
+              - { label: Seminar, value: templates/news/vi/seminar.md }
+              - { label: Tốt nghiệp, value: templates/news/vi/tot-nghiep.md }
+              - { label: Tuyển sinh, value: templates/news/vi/tuyen-sinh.md }
+          - { name: title, label: Tiêu đề bài mới, type: text, required: true }
+      - &act-duplicate
+        name: duplicate
+        label: Nhân bản
+        workflow: clone-entry.yml
+        ref: main
+        scope: entry
+        fields:
+          - { name: title, label: Tiêu đề bài mới, type: text, required: true }
+      - &act-translate-en
+        name: translate-en
+        label: Tạo bản tiếng Anh
+        workflow: clone-entry.yml
+        ref: main
+        scope: entry
+        confirm:
+          title: Tạo bản tiếng Anh?
+          message: Tạo bản nháp tiếng Anh cùng tên file từ nội dung hiện tại. Hãy lưu bài trước khi bấm.
+          button: Tạo bản nháp
+
+  - name: news-en
+    label: News (EN)
+    type: collection
+    path: src/content/news/en
+    subfolders: false
+    # English entries are only created by "Tạo bản tiếng Anh" so they keep the Vietnamese file name.
+    operations: { create: false, rename: false }
+    view:
+      primary: title
+      fields: [title, date, category, draft]
+      sort: [date, title]
+      default: { sort: date, order: desc }
+    fields: *news-fields
+
+  - name: projects-vi
+    label: Dự án (VI)
+    type: collection
+    path: src/content/projects/vi
+    subfolders: false
+    filename: '{primary}.md'
+    view:
+      primary: title
+      fields: [title, status, order, draft]
+      sort: [order, title]
+      default: { sort: order, order: asc }
+    fields: &project-fields
+      - { name: title, label: Tên dự án, type: string, required: true }
+      - { name: summary, label: Tóm tắt, type: text }
+      - name: status
+        label: Trạng thái
+        type: select
+        options:
+          values:
+            - { value: active, label: Đang thực hiện }
+            - { value: completed, label: Đã hoàn thành }
+      - { name: start, label: Bắt đầu, type: date, default: '', options: { format: yyyy-MM-dd } }
+      - { name: end, label: Kết thúc, type: date, default: '', options: { format: yyyy-MM-dd } }
+      - { name: cover, label: Ảnh bìa, type: image, options: { media: projects } }
+      - name: members
+        label: Thành viên tham gia
+        type: reference
+        options: { collection: members, multiple: true, value: '{name}', label: '{primary}' }
+      - { name: funding, label: Nguồn tài trợ, type: string }
+      - { name: links, component: links }
+      - { name: tags, label: Tag, type: string, list: true }
+      - { name: order, label: Thứ tự (nhỏ lên trước), type: number, default: 100 }
+      - { name: draft, component: draft }
+      - { name: body, component: body, options: { media: projects } }
+    actions:
+      - name: from-template
+        label: Tạo từ mẫu
+        workflow: clone-entry.yml
+        ref: main
+        scope: collection
+        confirm: false
+        fields:
+          - name: template
+            label: Mẫu
+            type: select
+            required: true
+            options:
+              - { label: Dự án, value: templates/projects/vi/du-an.md }
+          - { name: title, label: Tên dự án mới, type: text, required: true }
+      - *act-duplicate
+      - *act-translate-en
+
+  - name: projects-en
+    label: Projects (EN)
+    type: collection
+    path: src/content/projects/en
+    subfolders: false
+    operations: { create: false, rename: false }
+    view:
+      primary: title
+      fields: [title, status, order, draft]
+      sort: [order, title]
+      default: { sort: order, order: asc }
+    fields: *project-fields
+
+  - name: papers
+    label: Papers
+    type: collection
+    path: src/content/papers
+    subfolders: false
+    filename:
+      template: '{year}-{primary}.md'
+      field: create
+    view:
+      primary: title
+      fields: [title, date, type, draft]
+      sort: [date, title]
+      default: { sort: date, order: desc }
+    fields:
+      - { name: title, label: Tên paper, type: string, required: true }
+      - { name: date, label: Ngày, type: date, required: true, options: { format: yyyy-MM-dd } }
+      - name: authors
+        label: Tác giả
+        type: string
+        list: true
+        required: true
+        description: 'Thành viên của nhóm: nhập tên file không có .md (ví dụ nguyen-van-a). Người ngoài nhóm: nhập họ tên.'
+      - { name: venue, label: Nơi đăng, type: string, required: true }
+      - { name: venue_short, label: Tên viết tắt, type: string }
+      - name: type
+        label: Loại
+        type: select
+        required: true
+        options:
+          values:
+            - { value: conference, label: Hội nghị }
+            - { value: journal, label: Tạp chí }
+            - { value: workshop, label: Workshop }
+            - { value: preprint, label: Preprint }
+            - { value: thesis, label: Luận văn/Luận án }
+            - { value: book-chapter, label: Chương sách }
+      - name: status
+        label: Tình trạng
+        type: select
+        options:
+          values:
+            - { value: published, label: Đã xuất bản }
+            - { value: accepted, label: Đã được nhận }
+            - { value: preprint, label: Preprint }
+      - { name: links, component: links }
+      - { name: bibtex, label: BibTeX, type: text }
+      - { name: tags, label: Tag, type: string, list: true }
+      - name: projects
+        label: Dự án liên quan
+        type: reference
+        options: { collection: projects-vi, multiple: true, value: '{name}', label: '{primary}' }
+      - { name: featured, label: Nổi bật, type: boolean, default: false }
+      - { name: draft, component: draft }
+      - { name: body, component: body, options: { media: papers } }
+    actions:
+      - name: from-template
+        label: Tạo từ mẫu
+        workflow: clone-entry.yml
+        ref: main
+        scope: collection
+        confirm: false
+        fields:
+          - name: template
+            label: Mẫu
+            type: select
+            required: true
+            options:
+              - { label: Paper hội nghị, value: templates/papers/conference.md }
+              - { label: Paper tạp chí, value: templates/papers/journal.md }
+          - { name: title, label: Tên paper mới, type: text, required: true }
+      - *act-duplicate
+
+  - name: members
+    label: Thành viên
+    type: collection
+    path: src/content/members
+    subfolders: false
+    filename: '{primary}.md'
+    view:
+      primary: name
+      fields: [name, role, status, draft]
+      sort: [order, name]
+      default: { sort: order, order: asc }
+    fields:
+      - { name: name, label: Họ tên, type: string, required: true }
+      - name: role
+        label: Vai trò
+        type: select
+        required: true
+        options:
+          values:
+            - { value: professor, label: Giáo sư / Phó giáo sư }
+            - { value: lecturer, label: Giảng viên }
+            - { value: postdoc, label: Nghiên cứu sau tiến sĩ }
+            - { value: phd, label: Nghiên cứu sinh }
+            - { value: master, label: Học viên cao học }
+            - { value: undergrad, label: Sinh viên đại học }
+            - { value: staff, label: Cán bộ / Trợ lý }
+      - name: status
+        label: Tình trạng
+        type: select
+        options:
+          values:
+            - { value: current, label: Đang ở nhóm }
+            - { value: alumni, label: Cựu thành viên }
+      - { name: position_vi, label: Chức danh (VI), type: string }
+      - { name: position_en, label: Chức danh (EN), type: string }
+      - { name: avatar, label: Ảnh đại diện, type: image, options: { media: members } }
+      - { name: interests, label: Hướng nghiên cứu, type: string, list: true }
+      - { name: email_public, label: Email công khai, component: email }
+      - { name: links, component: links }
+      - { name: joined, label: Năm vào nhóm, type: number }
+      - { name: graduated, label: Năm tốt nghiệp, type: number }
+      - { name: now_at, label: Hiện đang ở, type: string }
+      - { name: bio_en, label: Giới thiệu (EN), type: text }
+      - { name: order, label: Thứ tự (nhỏ lên trước), type: number, default: 100 }
+      - { name: draft, component: draft }
+      - { name: body, component: body, options: { media: members } }
+    actions:
+      - name: from-template
+        label: Tạo từ mẫu
+        workflow: clone-entry.yml
+        ref: main
+        scope: collection
+        confirm: false
+        fields:
+          - name: template
+            label: Mẫu
+            type: select
+            required: true
+            options:
+              - { label: Giảng viên, value: templates/members/giang-vien.md }
+              - { label: Nghiên cứu sinh, value: templates/members/ncs.md }
+              - { label: Học viên cao học, value: templates/members/thac-si.md }
+              - { label: Sinh viên, value: templates/members/sinh-vien.md }
+          - { name: title, label: Họ tên thành viên mới, type: text, required: true }
+      - name: duplicate
+        label: Nhân bản
+        workflow: clone-entry.yml
+        ref: main
+        scope: entry
+        fields:
+          - { name: title, label: Họ tên thành viên mới, type: text, required: true }
+
+  - name: site
+    label: Cài đặt site
+    type: file
+    path: src/data/site.yml
+    format: yaml
+    fields:
+      - { name: name_vi, label: Tên nhóm (VI), type: string, required: true }
+      - { name: name_en, label: Tên nhóm (EN), type: string, required: true }
+      - { name: tagline_vi, label: Khẩu hiệu (VI), type: string }
+      - { name: tagline_en, label: Khẩu hiệu (EN), type: string }
+      - { name: intro_vi, label: Giới thiệu (VI), type: text }
+      - { name: intro_en, label: Giới thiệu (EN), type: text }
+      - { name: contact_email, label: Email liên hệ, component: email }
+      - name: links
+        label: Liên kết của nhóm
+        type: object
+        fields:
+          - { name: github, label: GitHub, component: url }
+          - { name: facebook, label: Facebook, component: url }
+          - { name: youtube, label: YouTube, component: url }
+          - { name: linkedin, label: LinkedIn, component: url }
+
+  # Templates are edited by admins only in practice; the body is a plain code box so the rich-text
+  # editor cannot escape the [[...]] placeholders. Other frontmatter keys are kept (content.merge).
+  - name: templates
+    label: Mẫu bài
+    type: group
+    items:
+      - name: tpl-news-vi
+        label: Mẫu tin tức (VI)
+        type: collection
+        path: templates/news/vi
+        subfolders: false
+        operations: { create: false, rename: false, delete: false }
+        view: { primary: title, fields: [title] }
+        fields: &template-fields
+          - { name: title, label: Tiêu đề, type: string }
+          - { name: body, label: Nội dung, type: code, options: { format: markdown } }
+      - name: tpl-news-en
+        label: Mẫu tin tức (EN)
+        type: collection
+        path: templates/news/en
+        subfolders: false
+        operations: { create: false, rename: false, delete: false }
+        view: { primary: title, fields: [title] }
+        fields: *template-fields
+      - name: tpl-projects-vi
+        label: Mẫu dự án (VI)
+        type: collection
+        path: templates/projects/vi
+        subfolders: false
+        operations: { create: false, rename: false, delete: false }
+        view: { primary: title, fields: [title] }
+        fields: *template-fields
+      - name: tpl-projects-en
+        label: Mẫu dự án (EN)
+        type: collection
+        path: templates/projects/en
+        subfolders: false
+        operations: { create: false, rename: false, delete: false }
+        view: { primary: title, fields: [title] }
+        fields: *template-fields
+      - name: tpl-papers
+        label: Mẫu paper
+        type: collection
+        path: templates/papers
+        subfolders: false
+        operations: { create: false, rename: false, delete: false }
+        view: { primary: title, fields: [title] }
+        fields: *template-fields
+      - name: tpl-members
+        label: Mẫu thành viên
+        type: collection
+        path: templates/members
+        subfolders: false
+        operations: { create: false, rename: false, delete: false }
+        view: { primary: name, fields: [name] }
+        fields:
+          - { name: name, label: Họ tên, type: string }
+          - { name: body, label: Nội dung, type: code, options: { format: markdown } }

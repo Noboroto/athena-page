@@ -1,0 +1,3 @@
+# Makes this directory its own pnpm root, so installs here never touch the site's lockfile.
+allowBuilds:
+  sharp: true

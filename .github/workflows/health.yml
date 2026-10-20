@@ -1,0 +1,29 @@
+name: Monthly health check
+
+on:
+  schedule:
+    # 02:00 UTC on the 1st. GitHub disables schedules after 60 days without repo activity;
+    # re-enable under Actions or start it manually with workflow_dispatch.
+    - cron: '0 2 1 * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  health:
+    # Scheduled runs always use the default branch; manual runs must not use another ref.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: bash .github/scripts/health-check.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

@@ -1,0 +1,14 @@
+{
+  "name": "athena-workflow-scripts",
+  "private": true,
+  "type": "module",
+  "description": "Dependencies of the CMS action workflows only. Installed in CI with `pnpm --dir .github/scripts install --frozen-lockfile`, isolated from the site build.",
+  "packageManager": "pnpm@12.3.4",
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "sharp": "^0.35.5",
+    "yaml": "^2.9.1"
+  }
+}
