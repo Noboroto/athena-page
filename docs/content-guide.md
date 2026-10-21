@@ -25,6 +25,13 @@ Nút khác ở một bài đang mở:
 
 - **Nhân bản**: sao chép bài (tin, dự án, paper, thành viên) thành bài mới với tiêu đề bạn nhập, giữ nguyên nội dung để sửa tiếp.
 
+### Soạn ngoài CMS rồi nhập file `.md`
+
+1. Thành viên: ở danh sách Thành viên, bấm **Templates** (trên điện thoại chỉ hiện biểu tượng tải xuống) và chọn mẫu để tải file `.md` về. Loại nội dung khác: mở một bài có sẵn, menu **⋮**, **Download**.
+2. Soạn file trên máy (giữ nguyên các khoá frontmatter, quy ước `[[…]]` như mục 3).
+3. Trong CMS bấm **Add an entry** (bài mới) hoặc mở bài cần thay, rồi bấm nút **Import from file** (biểu tượng tải lên) và chọn file. Các ô được điền sẵn; chưa có gì được lưu.
+4. Kiểm tra lại các ô (ô sai kiểu bị báo đỏ khi lưu), rồi bấm **Save**. Bài mới lấy tên file theo mẫu của collection (ví dụ ngày + tiêu đề), không theo tên file bạn chọn.
+
 ## 3. Nháp, placeholder và bài bị cách ly
 
 - **Nháp** (`draft`) mặc định bật với bài mới. Bài nháp không hiện ở bất cứ đâu trên site, kể cả RSS, sitemap và tìm kiếm.

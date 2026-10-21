@@ -1,4 +1,9 @@
 ---
+// Self-hosted fonts with a Vietnamese subset: system serif fonts (Iowan, Palatino, Georgia) lack
+// some stacked diacritics on many devices, so those glyphs fell back to another font mid-word.
+import '@fontsource-variable/inter/wght.css';
+import '@fontsource-variable/inter/wght-italic.css';
+import '@fontsource-variable/source-serif-4/wght.css';
 import 'katex/dist/katex.min.css';
 import '../styles/global.css';
 import Header from '../components/Header.astro';

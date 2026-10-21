@@ -345,6 +345,13 @@ content:
     path: src/content/members
     subfolders: false
     filename: '{primary}.md'
+    # "Templates" menu: download a template, fill it offline, then import it with the editor's
+    # "Import from file" button. Lists every file in templates/members (pages-yml.test.mjs).
+    templates:
+      - { label: Giảng viên, path: templates/members/giang-vien.md }
+      - { label: Nghiên cứu sinh, path: templates/members/ncs.md }
+      - { label: Học viên cao học, path: templates/members/thac-si.md }
+      - { label: Sinh viên, path: templates/members/sinh-vien.md }
     view:
       primary: name
       fields: [name, role, status, draft]

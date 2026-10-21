@@ -84,6 +84,15 @@ describe('.pages.yml actions', () => {
     );
   });
 
+  it('downloadable templates are exactly the template files of that collection', () => {
+    for (const [name, c] of Object.entries(collections).filter(([, v]) => v.templates)) {
+      const paths = c.templates.map((t) => t.path).sort();
+      const own = listTemplates({ templateDir: COLLECTIONS[name]?.templateDir }, REPO);
+      assert.ok(own.length > 0, `${name} has a template directory`);
+      assert.deepEqual(paths, own, name);
+    }
+  });
+
   it('entry-level buttons use scope entry and from-template uses scope collection', () => {
     for (const a of allActions.filter((x) => x.collection)) {
       assert.equal(
