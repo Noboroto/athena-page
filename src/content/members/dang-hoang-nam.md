@@ -1,5 +1,5 @@
 ---
-name: Lê Than
+name: Lê Thanh Tùng
 role: phd
 status: alumni
 position_vi: Tiến sĩ, cựu nghiên cứu sinh
