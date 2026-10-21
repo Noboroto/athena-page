@@ -12,7 +12,7 @@ links:
 joined: 2020
 now_at: Trường Đại học Khoa học tự nhiên, ĐHQG-HCM
 order: 2
-draft: false
+draft: true
 avatar: /images/members/anhbiography.jpg
 email_public: lttung@fit.hcmus.edu.vn
 ---
