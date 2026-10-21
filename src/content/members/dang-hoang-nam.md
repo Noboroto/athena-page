@@ -1,18 +1,17 @@
 ---
-name: Lê Thanh Tùng
+name: 'Đặng Hoàng Nam'
 role: phd
 status: alumni
-position_vi: Tiến sĩ, cựu nghiên cứu sinh
-position_en: PhD, former PhD student
-interests:
-  - Xử lý ngôn ngữ tự nhiên
-  - Học máy đa phương thức
+position_vi: 'Tiến sĩ, cựu nghiên cứu sinh'
+position_en: 'PhD, former PhD student'
+interests: ['học tăng cường', 'điều khiển robot']
 links:
-  orcid: https://orcid.org/0000-0002-9900-7047
+  github: https://github.com/example-hoangnam
 joined: 2020
-now_at: Trường Đại học Khoa học tự nhiên, ĐHQG-HCM
-order: 2
-draft: false
-avatar: /images/members/TungLe.jpg
-email_public: lttung@fit.hcmus.edu.vn
+graduated: 2026
+now_at: 'Phòng thí nghiệm Robot Mẫu, Đại học Ví Dụ'
+bio_en: 'Defended his PhD in 2026 on sample-efficient reinforcement learning for robot control.'
+order: 90
 ---
+
+Hoàng Nam bảo vệ luận án tiến sĩ năm 2026 về học tăng cường hiệu quả dữ liệu cho điều khiển robot, và hiện làm việc tại Phòng thí nghiệm Robot Mẫu, Đại học Ví Dụ.
