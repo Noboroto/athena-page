@@ -8,6 +8,7 @@ import path from 'node:path';
  *  - templateDir: where "Tạo từ mẫu" may copy from (absent = button not offered)
  *  - duplicate: "Nhân bản" allowed on entries
  *  - translateTo: "Tạo bản tiếng Anh" allowed; value is the target collection
+ *  - fromBibtex: "Tạo từ BibTeX" offered on the list (from-bibtex.mjs only knows the paper schema)
  */
 export const COLLECTIONS = {
   'news-vi': {
@@ -47,6 +48,7 @@ export const COLLECTIONS = {
     namePrefix: 'year',
     templateDir: 'templates/papers',
     duplicate: true,
+    fromBibtex: true,
   },
   members: {
     dir: 'src/content/members',

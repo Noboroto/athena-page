@@ -338,6 +338,17 @@ content:
               - { label: Paper tạp chí, value: templates/papers/journal.md }
           - { name: title, label: Tên paper mới, type: text, required: true }
       - *act-duplicate
+      - name: from-bibtex
+        label: Tạo từ BibTeX
+        workflow: from-bibtex.yml
+        ref: main
+        scope: collection
+        confirm: false
+        fields:
+          - name: bibtex
+            label: BibTeX (một mục)
+            type: textarea
+            required: true
 
   - name: members
     label: Thành viên

@@ -32,6 +32,19 @@ Nút khác ở một bài đang mở:
 3. Trong CMS bấm **Add an entry** (bài mới) hoặc mở bài cần thay, rồi bấm nút **Import from file** (biểu tượng tải lên) và chọn file. Các ô được điền sẵn; chưa có gì được lưu.
 4. Kiểm tra lại các ô (ô sai kiểu bị báo đỏ khi lưu), rồi bấm **Save**. Bài mới lấy tên file theo mẫu của collection (ví dụ ngày + tiêu đề), không theo tên file bạn chọn.
 
+**Mỗi người là một bài riêng.** Thêm thành viên mới bằng **Tạo từ mẫu**, **Add an entry** hoặc **Import from file** trên bài mới; đừng sửa tên một thành viên có sẵn thành người khác. Đường dẫn trang (`/members/<tên-file>/`) và mọi tin, paper, dự án trỏ tới bài đó vẫn là của người cũ.
+
+### Paper từ BibTeX
+
+1. Ở danh sách Papers bấm **Tạo từ BibTeX**, dán **một** mục BibTeX (`@inproceedings{…}`, `@article{…}`…), xác nhận.
+2. Khoảng một phút sau, tải lại danh sách: paper mới ở trạng thái **Nháp**. Tiêu đề, tác giả, ngày (năm + tháng nếu có), nơi đăng, loại, DOI/arXiv/URL, từ khoá và tóm tắt được điền từ BibTeX; ô BibTeX giữ nguyên bản bạn dán.
+3. Tác giả trùng tên một thành viên (không phân biệt dấu, thứ tự họ tên) được nối với trang thành viên đó; còn lại giữ tên như trong BibTeX. Kiểm tra lại danh sách tác giả, nơi đăng (thêm tên viết tắt nếu muốn), loại paper và dự án liên quan.
+4. Sửa xong, **tắt Nháp** rồi lưu.
+
+Tóm tắt giữ nguyên công thức `$…$` để site hiển thị bằng KaTeX. Preprint arXiv xuất từ Google Scholar hoặc DBLP (`@article` với `arXiv preprint …` hay `CoRR`) được ghi là preprint, nơi đăng "arXiv". "and others" trong danh sách tác giả bị bỏ.
+
+BibTeX lỗi cú pháp, thiếu `title`, `author` hoặc năm (`year`, hoặc `date` kiểu biblatex), hay có nhiều hơn một mục thì không tạo gì; lý do ghi ở lần chạy workflow "Paper from BibTeX" (admin xem trong tab Actions của repo).
+
 ## 3. Nháp, placeholder và bài bị cách ly
 
 - **Nháp** (`draft`) mặc định bật với bài mới. Bài nháp không hiện ở bất cứ đâu trên site, kể cả RSS, sitemap và tìm kiếm.

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 import { COLLECTIONS, listTemplates } from './collections.mjs';
 import { ACTIONS as CLONE_ACTIONS } from './clone-entry.mjs';
+import { ACTIONS as BIBTEX_ACTIONS } from './from-bibtex.mjs';
 import { ACTIONS as OPTIMIZE_ACTIONS } from './optimize-images.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -17,7 +18,11 @@ const workflows = Object.fromEntries(
     .filter((f) => f.endsWith('.yml'))
     .map((f) => [f, readYaml(`.github/workflows/${f}`)]),
 );
-const HANDLED = { 'clone-entry.yml': CLONE_ACTIONS, 'optimize-images.yml': OPTIMIZE_ACTIONS };
+const HANDLED = {
+  'clone-entry.yml': CLONE_ACTIONS,
+  'from-bibtex.yml': BIBTEX_ACTIONS,
+  'optimize-images.yml': OPTIMIZE_ACTIONS,
+};
 
 const flatten = (items) => items.flatMap((i) => (i.type === 'group' ? flatten(i.items) : [i]));
 const collections = Object.fromEntries(flatten(config.content).map((c) => [c.name, c]));
@@ -71,6 +76,7 @@ describe('.pages.yml actions', () => {
         config_.templateDir ? 'from-template' : null,
         config_.duplicate ? 'duplicate' : null,
         config_.translateTo ? 'translate-en' : null,
+        config_.fromBibtex ? 'from-bibtex' : null,
       ]
         .filter(Boolean)
         .sort();
@@ -93,11 +99,12 @@ describe('.pages.yml actions', () => {
     }
   });
 
-  it('entry-level buttons use scope entry and from-template uses scope collection', () => {
+  it('entry-level buttons use scope entry; list-level buttons use scope collection', () => {
+    const LIST_LEVEL = ['from-template', 'from-bibtex'];
     for (const a of allActions.filter((x) => x.collection)) {
       assert.equal(
         a.scope,
-        a.name === 'from-template' ? 'collection' : 'entry',
+        LIST_LEVEL.includes(a.name) ? 'collection' : 'entry',
         `${a.owner}/${a.name}`,
       );
     }
