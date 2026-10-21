@@ -163,6 +163,13 @@ describe('.pages.yml forms', () => {
     }
   });
 
+  it("a member's name and file name, which form the page URL, cannot change after creation", () => {
+    assert.equal(collections.members.operations.rename, false);
+    const name = fieldsOf(collections.members).find((f) => f.name === 'name');
+    assert.equal(name.readonly, 'edit');
+    assert.equal(collections.members.filename, '{primary}.md');
+  });
+
   it('references store the file name and point at real collections', () => {
     for (const name of Object.keys(COLLECTIONS)) {
       for (const f of fieldsOf(collections[name]).filter((x) => x.type === 'reference')) {

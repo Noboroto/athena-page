@@ -32,13 +32,13 @@ Nút khác ở một bài đang mở:
 3. Trong CMS bấm **Add an entry** (bài mới) hoặc mở bài cần thay, rồi bấm nút **Import from file** (biểu tượng tải lên) và chọn file. Các ô được điền sẵn; chưa có gì được lưu.
 4. Kiểm tra lại các ô (ô sai kiểu bị báo đỏ khi lưu), rồi bấm **Save**. Bài mới lấy tên file theo mẫu của collection (ví dụ ngày + tiêu đề), không theo tên file bạn chọn.
 
-**Mỗi người là một bài riêng.** Thêm thành viên mới bằng **Tạo từ mẫu**, **Add an entry** hoặc **Import from file** trên bài mới; đừng sửa tên một thành viên có sẵn thành người khác. Đường dẫn trang (`/members/<tên-file>/`) và mọi tin, paper, dự án trỏ tới bài đó vẫn là của người cũ.
+**Mỗi người là một bài riêng.** Thêm thành viên mới bằng **Tạo từ mẫu**, **Add an entry** hoặc **Import from file** trên bài mới. Ô **Họ tên** chỉ nhập được lúc tạo; sau đó bị khoá vì tên quyết định đường dẫn trang (`/members/<tên-file>/`), là thứ mọi tin, paper, dự án dùng để trỏ tới người đó. Ảnh và các ô khác vẫn sửa bình thường. Hai người trùng tên (hoặc chỉ khác dấu) vẫn có hai trang riêng: bài sau tự được thêm số vào tên file (`le-van-tam-1` khi tạo bằng Add an entry, `le-van-tam-2` khi dùng Tạo từ mẫu / Nhân bản). **Import from file** vào một thành viên đã có không đổi được Họ tên.
 
 ### Paper từ BibTeX
 
 1. Ở danh sách Papers bấm **Tạo từ BibTeX**, dán **một** mục BibTeX (`@inproceedings{…}`, `@article{…}`…), xác nhận.
 2. Khoảng một phút sau, tải lại danh sách: paper mới ở trạng thái **Nháp**. Tiêu đề, tác giả, ngày (năm + tháng nếu có), nơi đăng, loại, DOI/arXiv/URL, từ khoá và tóm tắt được điền từ BibTeX; ô BibTeX giữ nguyên bản bạn dán.
-3. Tác giả trùng tên một thành viên (không phân biệt dấu, thứ tự họ tên) được nối với trang thành viên đó; còn lại giữ tên như trong BibTeX. Kiểm tra lại danh sách tác giả, nơi đăng (thêm tên viết tắt nếu muốn), loại paper và dự án liên quan.
+3. Tác giả trùng tên một thành viên (đúng dấu, họ trước hay tên trước đều được) được nối với trang thành viên đó. BibTeX viết không dấu chỉ được nối khi không có hai thành viên cùng tên không dấu (ví dụ "Lê Văn Tâm" và "Lê Văn Tám"); trường hợp đó, và tác giả ngoài nhóm, giữ tên như trong BibTeX. Kiểm tra lại danh sách tác giả, nơi đăng (thêm tên viết tắt nếu muốn), loại paper và dự án liên quan.
 4. Sửa xong, **tắt Nháp** rồi lưu.
 
 Tóm tắt giữ nguyên công thức `$…$` để site hiển thị bằng KaTeX. Preprint arXiv xuất từ Google Scholar hoặc DBLP (`@article` với `arXiv preprint …` hay `CoRR`) được ghi là preprint, nơi đăng "arXiv". "and others" trong danh sách tác giả bị bỏ.
@@ -51,6 +51,7 @@ BibTeX lỗi cú pháp, thiếu `title`, `author` hoặc năm (`year`, hoặc `d
 - Chỉ có `draft` quyết định bài có hiện hay không. Ngày đăng ở tương lai không ẩn bài.
 - **Bài không nháp mà còn `[[…]]`** (kể cả dạng `\[\[…` do editor tự thêm dấu `\`), có link ảnh/thành viên/dự án/paper không tồn tại, hoặc tên file không phải chữ thường–số–gạch ngang sẽ bị **cách ly**: không lên site, các bài khác vẫn lên bình thường. Hệ thống tự mở một issue có nhãn `deploy-attention` trên GitHub liệt kê file và lỗi. Sửa bài rồi lưu lại, lần deploy sau issue tự đóng.
 - Bài không nháp chỉ được trỏ tới thành viên, dự án, paper **đã xuất bản** (không phải nháp). Trỏ tới bản nháp cũng bị coi là link hỏng.
+- **Thành viên có Họ tên không còn khớp tên file** (bỏ dấu; ví dụ file `le-thu-ha.md` mà tên là "Lê Thanh Tùng") cũng bị cách ly: Họ tên bị khoá trong CMS, nên lệch nghĩa là hồ sơ một người khác đã được gõ đè lên bài này. Sửa bài đó về đúng người cũ rồi tạo bài mới cho người mới. Nếu một người thật sự đổi tên, báo admin: admin đổi tên file trên GitHub và sửa các bài đang trỏ tới tên cũ.
 - Lỗi nặng hơn (frontmatter hỏng, thiếu trường bắt buộc, giá trị sai kiểu) làm build thất bại: site cũ được giữ nguyên và admin nhận cùng loại issue. Báo admin nếu thấy.
 - Nếu CMS báo "File has changed…" thì tải lại trang rồi sửa lại; có người khác vừa lưu bài này.
 

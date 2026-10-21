@@ -8,7 +8,14 @@ import { readFields, splitFrontmatter } from './frontmatter.mjs';
 import { parsePayload } from './payload.mjs';
 
 // Own fixture members, so renaming real content never breaks these tests.
-const MEMBERS = { 'tran-minh-khoa': 'Trần Minh Khoa', 'le-thanh-tung': 'Lê Thanh Tùng' };
+const MEMBERS = {
+  'tran-minh-khoa': 'Trần Minh Khoa',
+  'le-thanh-tung': 'Lê Thanh Tùng',
+  'le-van-tam': 'Lê Văn Tâm',
+  'le-van-tam-1': 'Lê Văn Tám',
+  'pham-an': 'Phạm An',
+  'pham-an-1': 'Phạm An',
+};
 
 let root;
 before(() => {
@@ -72,6 +79,22 @@ describe('from-bibtex', () => {
       plan('@misc{k, title={U}, author={Minh Khoa Trần and Doe, Jane}, year={2025}}').content,
     );
     assert.deepEqual(unicode.authors, ['tran-minh-khoa', 'Jane Doe']);
+  });
+
+  it('never guesses between members whose names differ only in accents', () => {
+    const authorsOf = (author) =>
+      readFields(plan(`@misc{k, title={A}, author={${author}}, year={2025}}`).content).authors;
+    assert.deepEqual(authorsOf('Lê, Văn Tâm'), ['le-van-tam']);
+    assert.deepEqual(authorsOf('Lê, Văn Tám'), ['le-van-tam-1']);
+    assert.deepEqual(authorsOf('Le, Van Tam'), ['Van Tam Le'], 'ambiguous without accents');
+    assert.deepEqual(authorsOf('Le, Thanh Tung'), ['le-thanh-tung'], 'unique without accents');
+    assert.deepEqual(authorsOf('Lê, Văn Tầm'), ['Văn Tầm Lê'], 'accented, but nobody by that name');
+    assert.deepEqual(
+      authorsOf('Lê, Thanh Tưng'),
+      ['Thanh Tưng Lê'],
+      'accents that differ from the only accent-free match are not linked',
+    );
+    assert.deepEqual(authorsOf('Phạm, An'), ['An Phạm'], 'two members with the same name');
   });
 
   it('keeps name particles and suffixes of external authors', () => {

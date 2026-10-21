@@ -128,6 +128,14 @@ git push origin main
 
 Push lên `main` kích hoạt `deploy.yml`. Nếu commit được tạo bởi một workflow nút bấm mà deploy không chạy, kích hoạt tay: `gh workflow run deploy.yml --ref main`. Sau revert, issue tự đóng ở lần deploy xanh.
 
+### Thành viên đổi tên, hoặc hồ sơ bị gõ đè
+
+Họ tên bị khoá trong CMS sau khi tạo và CMS không cho đổi tên file thành viên, vì tên file là URL `/members/<slug>/` và là giá trị mà `members`, `author`, `authors` của tin, dự án, paper trỏ tới. Đổi bằng git:
+
+1. **Người thật sự đổi tên**: `git mv src/content/members/<cũ>.md src/content/members/<mới>.md`, sửa `name` trong file, rồi thay `<cũ>` bằng `<mới>` trong `members:`/`author:`/`authors:` của mọi file dưới `src/content/` (`git grep -n '<cũ>' src/content`). Đổi tên ảnh đại diện thì sửa luôn `avatar`.
+2. **Hồ sơ người B bị gõ đè lên bài người A** (bài A bị cách ly vì Họ tên không khớp tên file): chuyển nội dung của B sang file mới (`git mv` như trên, không sửa các tham chiếu vì chúng thuộc về A), rồi khôi phục file A từ commit trước khi bị đè (`git log -- <file A>`, `git show <sha>:<file A> > <file A>`).
+3. `node scripts/check-content.mjs` phải báo sạch trước khi push.
+
 ### Editor không vào được
 
 1. Xem issue `incident` do health workflow mở (chạy hằng tháng, không thay cho việc kiểm tay).

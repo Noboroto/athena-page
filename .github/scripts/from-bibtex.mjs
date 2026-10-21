@@ -25,25 +25,34 @@ const TYPES = {
   inbook: 'book-chapter',
 };
 
-/** Lowercase, accent-free, single-spaced form used to match an author to a member name. */
-const nameKey = (text) =>
-  String(text)
-    .normalize('NFD')
-    .replace(/\p{M}+/gu, '')
-    .replace(/[đĐ]/g, 'd')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
+/** Lowercase, single-spaced name; with `ascii`, also accent-free ("Lê Văn Tâm" -> "le van tam"). */
+const nameKey = (text, { ascii = false } = {}) => {
+  let key = String(text).normalize('NFC').toLowerCase();
+  if (ascii)
+    key = key
+      .normalize('NFD')
+      .replace(/\p{M}+/gu, '')
+      .replace(/đ/g, 'd');
+  return key.replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+};
 
-/** Member slug by every name order a BibTeX author may use ("Nguyễn Văn An" or "Văn An Nguyễn"). */
+/**
+ * Member slugs by exact name and by accent-free name. Two members can share an accent-free
+ * name ("Lê Văn Tâm", "Lê Văn Tám"): such a key maps to null so nobody is linked by guesswork.
+ */
 function memberIndex(root) {
   const dir = path.resolve(root, getCollection('members').dir);
-  const index = new Map();
+  const exact = new Map();
+  const ascii = new Map();
   for (const file of readdirSync(dir).filter((f) => f.endsWith('.md'))) {
     const { name } = readFields(readFileSync(path.join(dir, file), 'utf8'));
-    if (typeof name === 'string' && name.trim()) index.set(nameKey(name), file.slice(0, -3));
+    if (typeof name !== 'string' || !name.trim()) continue;
+    const slug = file.slice(0, -3);
+    exact.set(nameKey(name), exact.has(nameKey(name)) ? null : slug);
+    const key = nameKey(name, { ascii: true });
+    ascii.set(key, ascii.has(key) ? null : slug);
   }
-  return index;
+  return { exact, ascii };
 }
 
 // The parser renders LaTeX markup ({\em x}, \href) as HTML; frontmatter fields are plain text.
@@ -62,11 +71,20 @@ function authorOf(creator, members) {
   const suffix = text(creator.suffix);
   const join = (...parts) => parts.filter(Boolean).join(' ');
   const western = [join(first, prefix, last), suffix].filter(Boolean).join(', ');
-  return (
-    members.get(nameKey(join(prefix, last, first))) ??
-    members.get(nameKey(join(first, prefix, last))) ??
-    western
-  );
+  const orders = [join(prefix, last, first), join(first, prefix, last)];
+  // Accented input only matches an accented name; accent-free input ("Le, Van Tam") falls back
+  // to the accent-free index, which refuses ambiguous keys.
+  for (const order of orders) {
+    const slug = members.exact.get(nameKey(order));
+    if (slug !== undefined) return slug ?? western;
+  }
+  if (orders.every((order) => nameKey(order) === nameKey(order, { ascii: true }))) {
+    for (const order of orders) {
+      const slug = members.ascii.get(nameKey(order, { ascii: true }));
+      if (slug !== undefined) return slug ?? western;
+    }
+  }
+  return western;
 }
 
 // Verbatim fields (url, doi, eprint) keep the `\%` added before parsing; give them back their `%`.

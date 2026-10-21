@@ -78,10 +78,46 @@ test('non-kebab file names are a content error for published files only', () => 
   assert.deepEqual(run1('src/content/news/vi/Tin Moi.md', 'title: a\ndraft: true'), []);
 });
 
+test('a published member whose name does not spell its file name is a content error', () => {
+  const member = (file, front) => checkFile(`src/content/members/${file}`, doc(front), ctx);
+  assert.deepEqual(member('le-thanh-tung.md', 'name: Lê Thanh Tùng').contentErrors, []);
+  assert.deepEqual(member('le-thanh-tung-2.md', 'name: Lê Thanh Tùng').contentErrors, [], 'suffix');
+  assert.equal(
+    member('le-thu-ha.md', 'name: Lê Thanh Tùng').contentErrors.length,
+    1,
+    'sharing a family name is not enough',
+  );
+  assert.deepEqual(member('duc.md', 'name: Đức').contentErrors, [], 'đ is d');
+  assert.deepEqual(member('djo-djat.md', 'name: Đỗ Đạt').contentErrors, [], 'older dj spelling');
+  assert.deepEqual(member('jsmith.md', 'name: J.Smith').contentErrors, []);
+  assert.deepEqual(member('obrien.md', "name: O'Brien").contentErrors, []);
+  assert.deepEqual(
+    member('o-brien.md', "name: O'Brien").contentErrors,
+    [],
+    'clone-script spelling',
+  );
+  assert.deepEqual(member('j-smith.md', 'name: J.Smith').contentErrors, []);
+  assert.match(
+    member('dang-hoang-nam.md', 'name: Lê Thanh Tùng').contentErrors[0],
+    /Họ tên "Lê Thanh Tùng" không khớp tên file "dang-hoang-nam.md"/,
+  );
+  assert.deepEqual(
+    member('dang-hoang-nam.md', 'name: Lê Thanh Tùng\ndraft: true').contentErrors,
+    [],
+    'drafts are not checked',
+  );
+  assert.deepEqual(
+    checkFile('src/content/news/vi/x.md', doc('title: Lê Thanh Tùng\nname: Ai đó'), ctx)
+      .contentErrors,
+    [],
+    'only members are checked',
+  );
+});
+
 test('a published item referencing a draft member is a content error', () => {
   const files = {
     'src/content/members/ban-nhap.md': doc('name: A\nrole: phd\ndraft: true'),
-    'src/content/members/da-dang.md': doc('name: B\nrole: phd'),
+    'src/content/members/da-dang.md': doc('name: Đa Dạng\nrole: phd'),
     'src/content/news/vi/n.md': doc(
       'title: a\ndate: 2026-01-01\ncategory: other\nmembers: [ban-nhap, da-dang]',
     ),
@@ -132,7 +168,7 @@ const exec = (root, opts = {}) => {
   const code = run({ root, log: (l) => lines.push(l), env: {}, ...opts });
   return { code, out: lines.join('\n') };
 };
-const GOOD = { 'src/content/members/nguyen-van-a.md': doc('name: A\nrole: phd') };
+const GOOD = { 'src/content/members/nguyen-van-a.md': doc('name: Nguyễn Văn A\nrole: phd') };
 const BAD = {
   'src/content/news/vi/bad.md': doc(
     'title: "[[Họ tên]] tốt nghiệp"\ndate: 2026-01-01\ncategory: graduation\ndraft: false',

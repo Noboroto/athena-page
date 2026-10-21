@@ -29,6 +29,24 @@ const REFERENCES = {
 
 const posix = (p) => p.split(path.sep).join('/');
 
+/**
+ * File names a member called `name` can have, as either generator spells them: the CMS drops `'` and
+ * `.` ("O'Brien" -> obrien), the clone scripts turn them into a hyphen (o-brien).
+ */
+const memberSlugsFor = (name) => {
+  const ascii = name
+    .normalize('NFD')
+    .replace(/\p{M}+/gu, '')
+    .replace(/[đĐ]/g, 'd')
+    .toLowerCase();
+  const slug = (text) =>
+    text
+      .split(/[^a-z0-9]+/)
+      .filter(Boolean)
+      .join('-');
+  return new Set([slug(ascii), slug(ascii.replace(/['’.]/g, ''))]);
+};
+
 function walk(dir, filter) {
   if (!existsSync(dir)) return [];
   const out = [];
@@ -87,6 +105,20 @@ export function checkFile(relPath, raw, ctx) {
     contentErrors.push(
       `tên file "${path.posix.basename(relPath)}" phải là kebab-case (a-z, 0-9, dấu gạch ngang)`,
     );
+  }
+
+  // A member's page URL and every reference to it use the file name, and the name is locked in the
+  // CMS once the entry exists. A name that no longer spells the file name was changed around that
+  // lock, most likely by typing someone else's profile over this entry.
+  if (relPath.startsWith(`${CONTENT_DIR}/members/`) && typeof data.name === 'string') {
+    // Duplicate names get a numeric suffix; older CMS file names spell Đ/đ as "dj" (slugify's default).
+    const file = toSlug(relPath).replace(/dj/g, 'd');
+    const slugs = memberSlugsFor(data.name);
+    if (!slugs.has(file) && !slugs.has(file.replace(/-\d+$/, ''))) {
+      contentErrors.push(
+        `Họ tên "${data.name}" không khớp tên file "${path.posix.basename(relPath)}": Họ tên quyết định đường dẫn trang nên không được đổi. Nếu hồ sơ một người khác đã được gõ đè lên bài này, sửa lại về đúng người cũ rồi tạo bài mới cho người mới; nếu đúng là người này đổi tên, báo admin`,
+      );
+    }
   }
 
   raw.split(/\r?\n/).forEach((line, i) => {

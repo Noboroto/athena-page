@@ -356,6 +356,8 @@ content:
     path: src/content/members
     subfolders: false
     filename: '{primary}.md'
+    # The file name is the member's URL and what other entries reference: no renaming in the CMS.
+    operations: { rename: false }
     # "Templates" menu: download a template, fill it offline, then import it with the editor's
     # "Import from file" button. Lists every file in templates/members (pages-yml.test.mjs).
     templates:
@@ -369,7 +371,13 @@ content:
       sort: [order, name]
       default: { sort: order, order: asc }
     fields:
-      - { name: name, label: Họ tên, type: string, required: true }
+      - name: name
+        label: Họ tên
+        type: string
+        required: true
+        # Typed when the member is created; locked afterwards because it names the page URL.
+        readonly: edit
+        description: Không sửa được sau khi tạo (tên quyết định đường dẫn trang). Cần đổi tên thì báo admin.
       - name: role
         label: Vai trò
         type: select
