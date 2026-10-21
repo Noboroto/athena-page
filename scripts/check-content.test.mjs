@@ -209,9 +209,12 @@ test('500 files check in under 2 seconds', () => {
 });
 
 // ---- repository content
-test('the repository content passes the guard', () => {
+// Only structural errors fail here: CI runs this before `check-content --quarantine`, and a broken
+// entry (missing image, leftover placeholder) must be quarantined, not block the whole deploy.
+// Content errors still fail a local build through the strict `prebuild` check.
+test('the repository content has no structural errors', () => {
   const r = checkAll(REPO);
-  assert.deepEqual([...r.structuralErrors, ...r.contentErrors], []);
+  assert.deepEqual(r.structuralErrors, []);
 });
 
 // ---- templates: 26 files, valid once placeholders are filled
