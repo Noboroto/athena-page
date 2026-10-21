@@ -12,8 +12,8 @@ const site = (ctx: APIContext) => ctx.site ?? new URL(localePath('vi'), 'http://
 export async function newsAndPapersFeed(ctx: APIContext, locale: Locale) {
   const { name, tagline } = siteText(getSite(), locale);
   const [news, papers] = await Promise.all([
-    // Vietnamese-only news is not announced in the English feed.
-    localizedItems('news', locale).then((l) => l.filter((i) => !i.viOnly)),
+    // News missing a translation is not announced in the other language's feed.
+    localizedItems('news', locale).then((l) => l.filter((i) => !i.fallback)),
     getPublished('papers'),
   ]);
   const paperItems = await Promise.all(

@@ -1,0 +1,15 @@
+---
+import { t, type Locale } from '../i18n';
+
+interface Props {
+  /** Language of the surrounding page. */
+  locale: Locale;
+  /** The only language the entry exists in. */
+  lang: Locale;
+}
+const { locale, lang } = Astro.props;
+---
+
+<span class="badge badge--warn" lang={locale}>
+  {t(locale, lang === 'vi' ? 'label.viOnly' : 'label.enOnly')}
+</span>

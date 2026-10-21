@@ -27,8 +27,11 @@ const { data } = member;
 
 const { Content } = await render(member);
 const hasBody = Boolean(member.body?.trim());
-const useEnglishBio = locale === 'en' && Boolean(data.bio_en?.trim());
+const hasEnglishBio = Boolean(data.bio_en?.trim());
+// Each language prefers its own bio and falls back to the other one, flagged with a badge.
+const useEnglishBio = hasEnglishBio && (locale === 'en' || !hasBody);
 const bioViOnly = locale === 'en' && !useEnglishBio && hasBody;
+const bioEnOnly = locale === 'vi' && useEnglishBio;
 const position =
   locale === 'en' ? (data.position_en ?? data.position_vi) : (data.position_vi ?? data.position_en);
 
@@ -74,13 +77,24 @@ const papers = await Promise.all(
   )}
 
   {useEnglishBio ? (
-    <Markdown source={data.bio_en ?? ''} />
+    <div lang="en">
+      {bioEnOnly && (
+        <p>
+          <span class="badge badge--warn" lang={locale}>
+            {t(locale, 'members.bioEnOnly')}
+          </span>
+        </p>
+      )}
+      <Markdown source={data.bio_en ?? ''} />
+    </div>
   ) : (
     hasBody && (
       <div lang="vi">
         {bioViOnly && (
           <p>
-            <span class="badge badge--warn">{t(locale, 'members.bioViOnly')}</span>
+            <span class="badge badge--warn" lang={locale}>
+              {t(locale, 'members.bioViOnly')}
+            </span>
           </p>
         )}
         <div class="prose">

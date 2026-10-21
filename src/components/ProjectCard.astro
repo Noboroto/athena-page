@@ -1,5 +1,5 @@
 ---
-import ViOnlyBadge from './ViOnlyBadge.astro';
+import LangOnlyBadge from './LangOnlyBadge.astro';
 import { withBase } from '../lib/url';
 import { label } from '../lib/labels';
 import { t, type Locale } from '../i18n';
@@ -31,8 +31,12 @@ const { data } = item.entry;
     <span class={data.status === 'active' ? 'badge' : 'badge badge--muted'}>
       {label(item.lang, 'projects', data.status)}
     </span>
-    {item.viOnly && <ViOnlyBadge locale={locale} />}
-    {data.draft && <span class="badge badge--muted">{t(locale, 'label.draft')}</span>}
+    {item.fallback && <LangOnlyBadge locale={locale} lang={item.lang} />}
+    {data.draft && (
+      <span class="badge badge--muted" lang={locale}>
+        {t(locale, 'label.draft')}
+      </span>
+    )}
   </div>
   <h3>
     <a href={item.href}>{data.title}</a>

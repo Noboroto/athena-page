@@ -1,6 +1,6 @@
 ---
 import CategoryBadge from './CategoryBadge.astro';
-import ViOnlyBadge from './ViOnlyBadge.astro';
+import LangOnlyBadge from './LangOnlyBadge.astro';
 import { formatDate, isoDate } from '../lib/format';
 import { withBase } from '../lib/url';
 import { t, type Locale } from '../i18n';
@@ -32,8 +32,12 @@ const { data } = item.entry;
   <div class="meta">
     <CategoryBadge locale={item.lang} category={data.category} />
     <time datetime={isoDate(data.date)}>{formatDate(data.date, item.lang)}</time>
-    {item.viOnly && <ViOnlyBadge locale={locale} />}
-    {data.draft && <span class="badge badge--muted">{t(locale, 'label.draft')}</span>}
+    {item.fallback && <LangOnlyBadge locale={locale} lang={item.lang} />}
+    {data.draft && (
+      <span class="badge badge--muted" lang={locale}>
+        {t(locale, 'label.draft')}
+      </span>
+    )}
   </div>
   <h3>
     <a href={item.href}>{data.title}</a>

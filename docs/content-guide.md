@@ -51,7 +51,7 @@ Site mặc định tiếng Việt; tiếng Anh là tuỳ chọn và **chỉ Tin 
 2. Mở bài, bấm **Tạo bản tiếng Anh**, xác nhận. Một bản nháp cùng tên file xuất hiện trong News (EN) hoặc Projects (EN).
 3. Mở bản en, dịch nội dung và tiêu đề, tắt Nháp, lưu.
 
-Tên file hai bản phải trùng nhau để site ghép cặp; vì vậy không tạo tay trong collection en. Chưa có bản en thì trang `/en/…` hiện bài tiếng Việt kèm nhãn và link sang trang tiếng Việt. Chỉ khi có đủ hai bản, hai trang mới được khai báo là bản dịch của nhau (hreflang, sitemap).
+Tên file hai bản phải trùng nhau để site ghép cặp; vì vậy không tạo tay trong collection en. Bài chỉ có một bản (chưa dịch, hoặc bản kia còn nháp) vẫn hiện trong danh sách của ngôn ngữ còn lại, kèm nhãn "Chỉ có bản tiếng Việt/Anh" và link sang trang của bản đang có; RSS của ngôn ngữ thiếu bản thì không đăng bài đó. Giới thiệu thành viên cũng vậy: thiếu bản của ngôn ngữ đang xem thì hiện bản kia kèm nhãn. Chỉ khi có đủ hai bản, hai trang mới được khai báo là bản dịch của nhau (hreflang, sitemap).
 
 Giới hạn: bài quá dài (khoảng trên 65.000 ký tự) làm nút **Nhân bản** và **Tạo bản tiếng Anh** thất bại; báo admin.
 

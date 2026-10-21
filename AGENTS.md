@@ -87,7 +87,7 @@ chủ đề rồi thêm dòng vào index của nó.
 - **Package manager**: pnpm (`packageManager` ghim version; build script được duyệt qua `allowBuilds` trong `pnpm-workspace.yaml`). Node theo `.nvmrc`/`engines`.
 - **Markdown**: `unified()` + `remark-math` + `rehype-sanitize` (chạy TRƯỚC) + `rehype-katex` (`trust: false`). Cú pháp `$…$` / `$$…$$`.
 - **Tìm kiếm / feed**: Pagefind (`astro-pagefind`), `@astrojs/rss`, `@astrojs/sitemap`.
-- **i18n**: `vi` (mặc định, không prefix) + `en` (`/en/...`). Cùng bộ key trong `src/i18n/{vi,en}.json`. Route chung `src/pages/[...locale]/…` + `localeStaticPaths()`. Bản en KHÔNG bắt buộc, không sinh trang en dự phòng.
+- **i18n**: `vi` (mặc định, không prefix) + `en` (`/en/...`). Cùng bộ key trong `src/i18n/{vi,en}.json`. Route chung `src/pages/[...locale]/…` + `localeStaticPaths()`. Bản en KHÔNG bắt buộc, không sinh trang dự phòng: danh sách mỗi ngôn ngữ kèm bài chỉ có ở ngôn ngữ kia (cờ `fallback`, link sang URL gốc) — `localizedItems()` trong `src/lib/localized.ts`.
 - **URL**: `site` + `base` lấy từ MỘT chỗ — `site.config.mjs` (env `ATHENA_SITE`/`ATHENA_BASE` ghi đè). Mọi URL nội bộ đi qua `withBase()` (`src/lib/url.ts`) hoặc `localePath()` (`src/i18n`), nối `import.meta.env.BASE_URL`; không viết `href="/..."` trần.
 - **Test**: `node:test` (`pnpm test` = `node --test "scripts/**/*.test.mjs" ".github/scripts/**/*.test.mjs"`). KHÔNG Jest/Vitest.
 - **Editor / deploy**: Pages CMS tự host (Vercel + Neon), GitHub Actions → GitHub Pages.
