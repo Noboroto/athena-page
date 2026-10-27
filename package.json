@@ -27,7 +27,7 @@
     "@fontsource-variable/source-serif-4": "5.3.1",
     "astro": "^7.4.0",
     "astro-pagefind": "^2.0.1",
-    "katex": "^0.19.0",
+    "katex": "^0.19.1",
     "pagefind": "^1.5.2",
     "rehype-katex": "^7.0.1",
     "rehype-sanitize": "^6.0.0",
